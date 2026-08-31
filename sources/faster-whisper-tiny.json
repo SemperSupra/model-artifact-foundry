@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "logical_id": "asr/faster-whisper/tiny",
+  "source": {
+    "provider": "huggingface",
+    "repository": "Systran/faster-whisper-tiny",
+    "discovery_ref": "d90ca5fe260221311c53c58e660288d3deb8d356"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "MIT"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "asr/faster-whisper",
+    "format": "ctranslate2",
+    "expected_file_patterns": [
+      "config.json",
+      "model.bin",
+      "tokenizer.json",
+      "vocabulary.txt"
+    ],
+    "max_unpacked_bytes": 100000000
+  },
+  "validator_profile": "faster-whisper-jfk-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/Systran/faster-whisper-tiny",
+    "Observed source license metadata: MIT",
+    "Converted model described upstream as derived from OpenAI Whisper tiny"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
