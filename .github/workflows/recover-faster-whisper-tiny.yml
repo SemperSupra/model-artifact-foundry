@@ -1,0 +1,127 @@
+name: Recover Faster Whisper tiny candidate evidence
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/recover-faster-whisper-tiny.yml"
+      - "tools/hydrate.py"
+      - "poc/faster-whisper-tiny.recover"
+  push:
+    branches:
+      - main
+    paths:
+      - "poc/faster-whisper-tiny.recover"
+
+permissions:
+  contents: read
+
+env:
+  OCI_REPOSITORY: ghcr.io/sempersupra/model-artifact-foundry
+  OCI_DIGEST: sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42
+  UPSTREAM_REVISION: d90ca5fe260221311c53c58e660288d3deb8d356
+  VALIDATED_TOOL_REVISION: 6ef51b0bfbb727b85fa00b65f7d70eacd378f01e
+
+jobs:
+  validate-recovery:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Validate recovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tools/hydrate.py tools/harvest_poc.py
+          test "$(cat poc/faster-whisper-tiny.recover)" = "${OCI_DIGEST}"
+
+  recover-existing:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate-recovery
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      - name: Install schema validator
+        shell: bash
+        run: python3 -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+
+      - name: Login to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Pull and verify already-published immutable candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf pullback
+          mkdir pullback
+          oras pull "${OCI_REPOSITORY}@${OCI_DIGEST}" --output pullback
+          python3 tools/harvest_poc.py verify-pulled --bundle-dir pullback/dist
+
+      - name: Generate and validate candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_PATH="candidates/asr-faster-whisper-tiny/${UPSTREAM_REVISION}/${VALIDATED_TOOL_REVISION}.json"
+          mkdir -p "$(dirname "${EVIDENCE_PATH}")"
+          python3 tools/harvest_poc.py candidate-manifest \
+            --dist-dir pullback/dist \
+            --oci-repository "${OCI_REPOSITORY}" \
+            --digest "${OCI_DIGEST}" \
+            --tool-revision "${VALIDATED_TOOL_REVISION}" \
+            --output "${EVIDENCE_PATH}"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/candidate-manifest.schema.json").read_text())
+          path = Path("candidates/asr-faster-whisper-tiny/d90ca5fe260221311c53c58e660288d3deb8d356/6ef51b0bfbb727b85fa00b65f7d70eacd378f01e.json")
+          jsonschema.validate(json.loads(path.read_text()), schema)
+          PY
+
+      - name: Push immutable evidence branch
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_PATH="candidates/asr-faster-whisper-tiny/${UPSTREAM_REVISION}/${VALIDATED_TOOL_REVISION}.json"
+          BRANCH="evidence/faster-whisper-tiny-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
+          git add "${EVIDENCE_PATH}"
+          git commit -m "evidence: record Faster Whisper tiny candidate"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "path=${EVIDENCE_PATH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record recovery summary
+        shell: bash
+        run: |
+          {
+            echo "## Existing candidate recovered without republishing"
+            echo
+            echo "- OCI digest: \`${OCI_DIGEST}\`"
+            echo "- validated source commit: \`${VALIDATED_TOOL_REVISION}\`"
+            echo "- evidence branch: \`${{ steps.evidence.outputs.branch }}\`"
+            echo "- evidence commit: \`${{ steps.evidence.outputs.sha }}\`"
+            echo "- evidence path: \`${{ steps.evidence.outputs.path }}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
