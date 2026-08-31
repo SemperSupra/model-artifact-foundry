@@ -1,41 +1,47 @@
 # Current Task — Faster Whisper Tiny Foundry Proof of Concept
 
 **Issue:** #3  
-**Branch:** `poc/faster-whisper-tiny`  
-**State:** ACTIVE  
+**State:** COMPLETE  
+**Operationally tested head:** `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`  
 **Purpose:** prove one complete Foundry supply path for BHADA, then stop platform expansion.
 
-## Objective
+## Result
 
-Produce one known-good Faster Whisper `tiny` artifact from exact upstream revision `d90ca5fe260221311c53c58e660288d3deb8d356`, publish it as a generic OCI artifact in GHCR from trusted public GitHub Actions, record immutable candidate evidence, promote one reviewed catalog mapping, and provide a generic digest-pinned hydrator suitable for BHADA's durable `/cache/models/asr` boundary.
+The proof succeeded end to end for logical artifact `asr/faster-whisper/tiny`.
 
-## In scope
+Approved identity:
 
-- exact-revision acquisition from `Systran/faster-whisper-tiny`;
-- fail-closed upstream metadata/license/gating checks;
-- expected-file inventory and SHA-256 manifest;
-- local-only Faster Whisper load/transcription smoke using a pinned public JFK fixture;
-- deterministic model archive + manifest/notice as generic OCI layers;
-- trusted-main GHCR candidate publication and pull-back verification;
-- immutable candidate evidence committed to a review branch;
-- one approved catalog entry after evidence review;
-- generic ORAS-based hydrator with stage -> verify -> atomic promote behavior;
-- BHADA handoff documentation with logical ID, digest, cache layout and invocation.
+- upstream: `Systran/faster-whisper-tiny`
+- exact upstream revision: `d90ca5fe260221311c53c58e660288d3deb8d356`
+- OCI repository: `ghcr.io/sempersupra/model-artifact-foundry`
+- approved digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
+- candidate evidence commit: `4a82c5d72dd3fef6bef3dccdace23a5c1859636c`
+- model archive SHA-256: `9e578a3dc8d8ac2178a4e986a8f02e488c94bf814dd7ba51701591a76093c829`
+- validated runtime: `faster-whisper==1.2.1`, `ctranslate2==4.6.0`
 
-## Out of scope
+## Evidence
 
-- scheduled discovery or automatic update harvesting;
-- additional model sizes/families;
-- second consumers;
-- self-hosted runners;
-- generic quality benchmarking;
-- BHADA product-code changes;
-- TrueNAS deployment.
+- publication run `33438050007`: exact-revision acquisition, local-only JFK transcription, GHCR login and candidate publication passed; initial pull verifier exposed only the ORAS-preserved `dist/` path observation;
+- recovery run `33438464760`: pulled the existing immutable digest without republishing, verified bundle/archive/per-file hashes, and produced schema-valid canonical candidate evidence;
+- approved-consumer run `33438707454`: catalog validation, fresh digest-pinned hydration, second hydration with ORAS replaced by `/bin/false`, and local-only Faster Whisper JFK transcription all passed.
 
-## Gates
+The operational test at `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b` produced the model directory:
 
-PR validation must not publish. Candidate publication may occur only from trusted `main`. Candidate publication is not catalog promotion. Consumers pin an OCI digest, never `latest` or upstream `main`.
+`/tmp/foundry-cache/blobs/sha256-f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42/model`
 
-## Exit
+For BHADA, the equivalent durable root is `/cache/models/asr`.
 
-Stop when a real candidate has been published and pull-back verified, the catalog maps `asr/faster-whisper/tiny` to its immutable digest, the generic hydrator is usable, and BHADA #88 has an exact consumer handoff. At that point return effort to the BHADA MVP critical path.
+## R4 proof
+
+- **Reproducible:** source revision, per-file hashes, OCI digest, evidence commit and validator versions are fixed.
+- **Repeatable:** the approved digest hydrated successfully from a fresh cache.
+- **Reversible:** the content-addressed layout retains digest-specific blobs; selection is separate from bytes.
+- **Idempotent:** a second hydration succeeded while the ORAS executable was deliberately `/bin/false`, proving no registry access was required for an intact cached digest.
+
+## Scope stop
+
+The Foundry proof is complete. Do not continue scheduled discovery, additional models, second-consumer work, generalized harvesting, or large-model infrastructure as part of the BHADA MVP effort.
+
+BHADA #88 now has a usable artifact/catalog/hydrator contract. Return current engineering effort to BHADA's stabilization/release critical path; any further Foundry work belongs in a separate session and must re-establish value/scope before expansion.
+
+Any commits after the operationally tested head above are documentation/control-plane closeout only unless separately revalidated.
