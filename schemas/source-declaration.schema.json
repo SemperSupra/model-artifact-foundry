@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/source-declaration.schema.json",
+  "title": "Model Artifact Foundry Source Declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "logical_id",
+    "source",
+    "license_policy",
+    "artifact",
+    "validator_profile",
+    "promotion_policy"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "logical_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._/-]*$",
+      "minLength": 3
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "repository", "discovery_ref"],
+      "properties": {
+        "provider": {"enum": ["huggingface", "github-release", "https"]},
+        "repository": {"type": "string", "minLength": 1},
+        "discovery_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "license_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_spdx_ids", "require_redistributable", "allow_custom", "allow_gated"],
+      "properties": {
+        "allowed_spdx_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "require_redistributable": {"const": true},
+        "allow_custom": {"const": false},
+        "allow_gated": {"const": false}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "format", "expected_file_patterns", "max_unpacked_bytes"],
+      "properties": {
+        "family": {"type": "string", "minLength": 1},
+        "format": {"type": "string", "minLength": 1},
+        "expected_file_patterns": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "max_unpacked_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "validator_profile": {"type": "string", "minLength": 1},
+    "redistribution_notices": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "promotion_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {"const": "review-required"}
+      }
+    }
+  }
+}
