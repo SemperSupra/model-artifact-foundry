@@ -2,53 +2,54 @@
 
 This is the deliberately narrow end-to-end proof for Model Artifact Foundry issue #3.
 
-## Fixed inputs
+## Result — complete
+
+The proof succeeded. The approved artifact is:
 
 - logical artifact ID: `asr/faster-whisper/tiny`
 - upstream repository: `Systran/faster-whisper-tiny`
 - exact upstream revision: `d90ca5fe260221311c53c58e660288d3deb8d356`
-- observed source metadata for the proof: public, non-gated, MIT
+- OCI repository: `ghcr.io/sempersupra/model-artifact-foundry`
+- approved OCI digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
+- model archive SHA-256: `9e578a3dc8d8ac2178a4e986a8f02e488c94bf814dd7ba51701591a76093c829`
+- canonical candidate evidence commit: `4a82c5d72dd3fef6bef3dccdace23a5c1859636c`
+- operationally tested Foundry head: `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`
 - validator: `faster-whisper==1.2.1`, `ctranslate2==4.6.0`
 - behavior fixture: `openai/whisper/tests/jfk.flac` at commit `6e3be77e1a105e59086e3e21ff5f609fd6fa89a5`
-- OCI repository: `ghcr.io/sempersupra/model-artifact-foundry`
-- candidate tag: `candidate-asr-faster-whisper-tiny-d90ca5fe2602`
+- observed source metadata for the proof: public, non-gated, MIT
 
-The candidate tag is only a locator. The OCI `sha256:` digest emitted after publication is the artifact identity.
+The candidate tag `candidate-asr-faster-whisper-tiny-d90ca5fe2602` is only a locator. The OCI digest above is the approved artifact identity.
 
-## What trusted-main publication proves
+## Evidence sequence
 
-The one-shot workflow:
+Trusted-main publication run `33438050007` successfully:
 
-1. checks that the public upstream metadata still identifies the exact pinned revision and MIT/non-gated state;
-2. downloads only `config.json`, `model.bin`, `tokenizer.json`, and `vocabulary.txt` from that exact revision;
-3. hashes every file and enforces the declared size ceiling;
-4. loads the model from the explicit local directory with `local_files_only=True` and offline environment flags;
-5. transcribes the pinned JFK fixture and checks expected English phrases;
-6. builds a deterministic `model.tar.gz` with normalized archive metadata;
-7. publishes the archive, bundle manifest, and notice as a generic OCI artifact;
-8. resolves the registry digest, pulls the artifact back by digest, and re-verifies the bundle;
-9. writes a schema-valid candidate manifest to a separate evidence branch.
+1. verified the pinned upstream revision and MIT/non-gated state;
+2. downloaded only `config.json`, `model.bin`, `tokenizer.json`, and `vocabulary.txt`;
+3. hashed every file and enforced the size ceiling;
+4. loaded the model from the explicit local directory with `local_files_only=True` and offline environment flags;
+5. transcribed the pinned JFK fixture and passed expected English phrase checks;
+6. built the deterministic model archive;
+7. published the generic OCI candidate at the digest above.
 
-Candidate publication does **not** update `catalog/approved.json`.
+The first pull-back verifier revealed that ORAS preserves the original `dist/` source directory when pulling these layers. That was a verifier-path observation, not a model or registry failure.
 
-## Promotion
+Recovery run `33438464760` then pulled the **existing digest without republishing it**, verified the archive and per-file hashes, and produced the schema-valid candidate evidence that is now canonical at commit `4a82c5d72dd3fef6bef3dccdace23a5c1859636c`.
 
-After the evidence branch is reviewed and merged, promotion is one small catalog PR. The catalog entry records:
+Promotion subsequently bound `asr/faster-whisper/tiny` to that immutable digest in `catalog/approved.json`.
 
-- OCI repository;
-- immutable approved digest;
-- exact upstream revision;
-- immutable candidate evidence commit/path;
-- MIT license identity;
-- compatibility evidence.
+Final consumer run `33438707454` successfully:
 
-No consumer should resolve the candidate tag or upstream `main`.
+1. validated the approved catalog;
+2. hydrated an empty cache by `repository@sha256:digest`;
+3. verified bundle, archive and per-file identities;
+4. ran hydration again with ORAS deliberately replaced by `/bin/false`, proving the intact local cache is sufficient;
+5. loaded Faster Whisper from the hydrated local directory with model networking disabled;
+6. transcribed the pinned JFK fixture successfully.
 
 ## Generic hydration
 
 `tools/hydrate.py` consumes the approved catalog and an artifact logical ID.
-
-Example:
 
 ```bash
 oras login ghcr.io
@@ -58,19 +59,17 @@ python3 tools/hydrate.py \
   --cache-root /cache/models/asr
 ```
 
-The hydrator pulls `repository@sha256:digest`, stages it under `.staging`, verifies the bundle/archive/per-file hashes, safely extracts the allowlisted model files, atomically promotes the content-addressed directory, and writes a small selection JSON under `selected/`.
+The hydrator pulls the approved immutable digest, stages it under `.staging`, verifies the OCI-selected bundle/archive/per-file hashes, safely extracts the allowlisted model files, atomically promotes the content-addressed directory, and writes a small selection JSON under `selected/`.
 
-Repeated hydration of an intact selected digest verifies the existing files and performs no download. Older digest directories are retained for rollback.
-
-The command prints the explicit local model directory. BHADA should pass that directory to Faster Whisper rather than asking Faster Whisper to resolve a remote model name.
+Repeated hydration of an intact digest verifies the existing local files and performs no download. Older digest directories can coexist for rollback.
 
 ## BHADA boundary
 
-The intended BHADA mapping is:
+With `/cache/models/asr` as the cache root, BHADA receives:
 
 ```text
 /cache/models/asr/
-  blobs/sha256-<digest>/
+  blobs/sha256-f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42/
     bundle-manifest.json
     NOTICE.txt
     .verified.json
@@ -83,14 +82,12 @@ The intended BHADA mapping is:
     asr__faster-whisper__tiny.json
 ```
 
-BHADA `runtime-full` can consume the printed `model/` path with ASR model auto-download disabled. `runtime-core` remains model- and ASR-package-free.
+The selected JSON identifies the exact digest and explicit local `model/` directory. BHADA `runtime-full` can pass that directory to Faster Whisper with ASR model auto-download disabled. `runtime-core` remains model- and ASR-package-free.
 
 ## Package visibility
 
-GitHub Container Registry creates a new package as private by default. The publication/pull-back proof works with the workflow's `GITHUB_TOKEN`. A deployment can also authenticate ORAS.
-
-If anonymous public consumption is desired, an organization/package administrator must change the package visibility to **Public** in GitHub package settings. GitHub documents that this visibility change is irreversible, so it remains a deliberate owner action rather than an automated workflow side effect.
+The GHCR package was created through the repository workflow and is usable with authenticated ORAS access. Anonymous public package access is optional rather than required for this proof. Changing GHCR package visibility to public is a separate owner decision and is not part of the BHADA MVP critical path.
 
 ## Scope stop
 
-Once one digest is approved and BHADA can hydrate/use it, this proof is done. Scheduled discovery, additional models, second-consumer work, generalized harvesters, and large-model infrastructure are later work only if the Foundry proves enough value to justify them.
+This proof is complete. Scheduled discovery, additional models, second-consumer work, generalized harvesters, and large-model infrastructure are deferred. Further Foundry work should occur in its own session and must justify expansion against the private value/kill criteria rather than continuing as part of BHADA's MVP work.
