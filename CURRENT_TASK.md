@@ -1,55 +1,41 @@
-# Current Task — Public Contract Bootstrap / Increment 0
+# Current Task — Faster Whisper Tiny Foundry Proof of Concept
 
-**Issue:** #1  
-**Branch:** `bootstrap/public-contracts`  
-**State:** READY-FOR-EXPLICIT-MERGE-AUTHORIZATION
+**Issue:** #3  
+**Branch:** `poc/faster-whisper-tiny`  
+**State:** ACTIVE  
+**Purpose:** prove one complete Foundry supply path for BHADA, then stop platform expansion.
 
 ## Objective
 
-Establish the first reviewed public contract baseline without harvesting, downloading, or publishing model/checkpoint artifacts.
+Produce one known-good Faster Whisper `tiny` artifact from exact upstream revision `d90ca5fe260221311c53c58e660288d3deb8d356`, publish it as a generic OCI artifact in GHCR from trusted public GitHub Actions, record immutable candidate evidence, promote one reviewed catalog mapping, and provide a generic digest-pinned hydrator suitable for BHADA's durable `/cache/models/asr` boundary.
 
 ## In scope
 
-- repository role and non-goals;
-- OPAV/R4 contributor/agent contract;
-- artifact lifecycle and identity semantics;
-- draft machine-readable schemas for source declarations, candidate manifests, and approved catalog entries;
-- generic digest-pinned hydration contract;
-- public GitHub Actions security/authority boundary for later increments;
-- non-executable Faster Whisper `tiny` source-declaration example;
-- Increment 0 documentation and evidence.
+- exact-revision acquisition from `Systran/faster-whisper-tiny`;
+- fail-closed upstream metadata/license/gating checks;
+- expected-file inventory and SHA-256 manifest;
+- local-only Faster Whisper load/transcription smoke using a pinned public JFK fixture;
+- deterministic model archive + manifest/notice as generic OCI layers;
+- trusted-main GHCR candidate publication and pull-back verification;
+- immutable candidate evidence committed to a review branch;
+- one approved catalog entry after evidence review;
+- generic ORAS-based hydrator with stage -> verify -> atomic promote behavior;
+- BHADA handoff documentation with logical ID, digest, cache layout and invocation.
 
 ## Out of scope
 
-- discovery workflow execution;
-- model/checkpoint downloads;
-- GHCR/OCI publication;
-- package-write permissions;
-- model validation execution;
-- catalog promotion;
-- consumer integration changes;
-- private repository access.
+- scheduled discovery or automatic update harvesting;
+- additional model sizes/families;
+- second consumers;
+- self-hosted runners;
+- generic quality benchmarking;
+- BHADA product-code changes;
+- TrueNAS deployment.
 
-## Acceptance
+## Gates
 
-1. Public repository role is independently understandable. — satisfied
-2. Candidate production and approval/promotion are unambiguously separate. — satisfied
-3. Schemas fail closed on missing license/provenance/identity fields. — satisfied
-4. Approved catalog requires immutable OCI digest identity. — satisfied
-5. Hydration contract is stage -> verify -> atomic promote and is R4 by design. — satisfied
-6. Security contract prohibits privileged execution of untrusted PR code and private-read credentials. — satisfied
-7. Example declaration contains metadata only and no model bytes. — satisfied
-8. No workflow in this increment can harvest or publish artifacts. — satisfied
+PR validation must not publish. Candidate publication may occur only from trusted `main`. Candidate publication is not catalog promotion. Consumers pin an OCI digest, never `latest` or upstream `main`.
 
-## Verification evidence
+## Exit
 
-- branch reconciled with current `main`; final pre-ready compare was ahead with 0 commits behind;
-- diff contains only Markdown documentation, JSON schemas, and one JSON metadata example;
-- no `.github/workflows` files and no binary/model/checkpoint files are introduced;
-- all three schemas parse and pass JSON Schema Draft 2020-12 schema validation;
-- the Faster Whisper `tiny` example validates against the source-declaration schema;
-- negative validation confirms a gated source declaration is rejected by policy schema;
-- negative validation confirms the candidate-manifest schema cannot represent state `approved`;
-- no GHCR mutation, upstream artifact download, model validation execution, or private-repository read occurred.
-
-Stop at explicit owner merge authorization. No GHCR mutation or model harvesting is authorized by this task.
+Stop when a real candidate has been published and pull-back verified, the catalog maps `asr/faster-whisper/tiny` to its immutable digest, the generic hydrator is usable, and BHADA #88 has an exact consumer handoff. At that point return effort to the BHADA MVP critical path.
