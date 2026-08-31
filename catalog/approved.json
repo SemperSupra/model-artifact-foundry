@@ -1,4 +1,27 @@
 {
   "schema_version": 1,
-  "artifacts": {}
+  "artifacts": {
+    "asr/faster-whisper/tiny": {
+      "oci_repository": "ghcr.io/sempersupra/model-artifact-foundry",
+      "approved_digest": "sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42",
+      "candidate_evidence": {
+        "repository": "SemperSupra/model-artifact-foundry",
+        "commit_sha": "4a82c5d72dd3fef6bef3dccdace23a5c1859636c",
+        "manifest_path": "candidates/asr-faster-whisper-tiny/d90ca5fe260221311c53c58e660288d3deb8d356/6ef51b0bfbb727b85fa00b65f7d70eacd378f01e.json"
+      },
+      "upstream_exact_revision": "d90ca5fe260221311c53c58e660288d3deb8d356",
+      "license_spdx_id": "MIT",
+      "approved_at": "2026-08-31T20:55:00Z",
+      "compatibility": [
+        {
+          "component": "faster-whisper",
+          "constraint": "validated == 1.2.1"
+        },
+        {
+          "component": "ctranslate2",
+          "constraint": "validated == 4.6.0"
+        }
+      ]
+    }
+  }
 }
