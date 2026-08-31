@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/approved-catalog.schema.json",
+  "title": "Model Artifact Foundry Approved Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "artifacts"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "logical_id",
+          "oci_repository",
+          "approved_digest",
+          "candidate_evidence",
+          "upstream_exact_revision",
+          "license_spdx_id",
+          "approved_at"
+        ],
+        "properties": {
+          "logical_id": {"type": "string", "minLength": 3},
+          "oci_repository": {"type": "string", "minLength": 1},
+          "approved_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+          "candidate_evidence": {"type": "string", "minLength": 1},
+          "upstream_exact_revision": {"type": "string", "minLength": 7},
+          "license_spdx_id": {"type": "string", "minLength": 1},
+          "approved_at": {"type": "string", "format": "date-time"},
+          "compatibility": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["component", "constraint"],
+              "properties": {
+                "component": {"type": "string", "minLength": 1},
+                "constraint": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "previous_digests": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+          }
+        }
+      }
+    }
+  }
+}
