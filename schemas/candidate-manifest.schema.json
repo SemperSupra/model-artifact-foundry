@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/candidate-manifest.schema.json",
+  "title": "Model Artifact Foundry Candidate Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "logical_id",
+    "state",
+    "upstream",
+    "license",
+    "files",
+    "validation",
+    "oci"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "logical_id": {"type": "string", "minLength": 3},
+    "state": {"enum": ["candidate", "rejected", "quarantined"]},
+    "acquired_at": {"type": "string", "format": "date-time"},
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "repository", "exact_revision"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "repository": {"type": "string", "minLength": 1},
+        "exact_revision": {"type": "string", "minLength": 7}
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_spdx_id", "redistribution_verified", "evidence"],
+      "properties": {
+        "observed_spdx_id": {"type": "string", "minLength": 1},
+        "redistribution_verified": {"const": true},
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "upstream_identity": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "tool_revision", "status", "claims"],
+      "properties": {
+        "profile": {"type": "string", "minLength": 1},
+        "tool_revision": {"type": "string", "minLength": 7},
+        "status": {"enum": ["passed", "failed", "quarantined"]},
+        "claims": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "compatibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "constraint", "evidence"],
+        "properties": {
+          "component": {"type": "string", "minLength": 1},
+          "constraint": {"type": "string", "minLength": 1},
+          "evidence": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "oci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "digest", "pullback_verified"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "pullback_verified": {"const": true}
+      }
+    }
+  }
+}
