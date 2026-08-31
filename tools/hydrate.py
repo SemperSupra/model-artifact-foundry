@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import uuid
 
+BUNDLE_FILES = {"model.tar.gz", "bundle-manifest.json", "NOTICE.txt"}
+
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -22,6 +24,23 @@ def sha256_file(path: Path) -> str:
 
 def safe_name(logical_id: str) -> str:
     return logical_id.replace("/", "__").replace(":", "_")
+
+
+def resolve_bundle_dir(root: Path) -> Path:
+    matches = []
+    for candidate in (root, root / "dist"):
+        if not candidate.is_dir():
+            continue
+        actual = {p.name for p in candidate.iterdir() if p.is_file()}
+        if actual == BUNDLE_FILES:
+            matches.append(candidate)
+    if len(matches) != 1:
+        layouts = []
+        for candidate in (root, root / "dist"):
+            if candidate.is_dir():
+                layouts.append(f"{candidate}: {sorted(p.name for p in candidate.iterdir())}")
+        raise RuntimeError(f"unable to resolve exactly one approved OCI layer layout: {layouts}")
+    return matches[0]
 
 
 def safe_extract(archive: Path, dest: Path, expected_names: set[str]) -> None:
@@ -100,26 +119,22 @@ def hydrate(catalog_path: Path, logical_id: str, cache_root: Path, oras: str) ->
     try:
         target = f"{repository}@{digest}"
         subprocess.run([oras, "pull", target, "--output", str(pulled)], check=True)
+        bundle_dir = resolve_bundle_dir(pulled)
 
-        required = {"model.tar.gz", "bundle-manifest.json", "NOTICE.txt"}
-        actual = {p.name for p in pulled.iterdir() if p.is_file()}
-        if actual != required:
-            raise RuntimeError(f"pulled OCI layer set mismatch: {sorted(actual)}")
-
-        manifest = json.loads((pulled / "bundle-manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((bundle_dir / "bundle-manifest.json").read_text(encoding="utf-8"))
         if manifest["logical_id"] != logical_id:
             raise RuntimeError("bundle logical ID does not match catalog selection")
         if manifest["upstream"]["exact_revision"] != entry["upstream_exact_revision"]:
             raise RuntimeError("bundle upstream revision does not match approved catalog")
 
-        archive = pulled / "model.tar.gz"
+        archive = bundle_dir / "model.tar.gz"
         if sha256_file(archive) != manifest["archive"]["sha256"]:
             raise RuntimeError("bundle archive hash mismatch")
         safe_extract(archive, model_stage, {x["path"] for x in manifest["files"]})
         verify_model_dir(model_stage, manifest)
 
-        shutil.copy2(pulled / "bundle-manifest.json", extracted / "bundle-manifest.json")
-        shutil.copy2(pulled / "NOTICE.txt", extracted / "NOTICE.txt")
+        shutil.copy2(bundle_dir / "bundle-manifest.json", extracted / "bundle-manifest.json")
+        shutil.copy2(bundle_dir / "NOTICE.txt", extracted / "NOTICE.txt")
         atomic_write_json(
             extracted / ".verified.json",
             {
