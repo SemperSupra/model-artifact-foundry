@@ -1,0 +1,68 @@
+{
+  "acquired_at": "2026-08-31T20:53:58Z",
+  "compatibility": [
+    {
+      "component": "faster-whisper",
+      "constraint": "validated == 1.2.1",
+      "evidence": "faster-whisper-jfk-v1"
+    },
+    {
+      "component": "ctranslate2",
+      "constraint": "validated == 4.6.0",
+      "evidence": "faster-whisper-jfk-v1"
+    }
+  ],
+  "files": [
+    {
+      "path": "config.json",
+      "sha256": "a73a28cdfe1c43ccc7202fa333d1f89c202477271407ae9a7f19afa52039cac8",
+      "size_bytes": 2249
+    },
+    {
+      "path": "model.bin",
+      "sha256": "dcb76c6586fc06cbdac6dd21f14cfd129cc4cdd9dce19bf4ffa62e59cbe6e6d1",
+      "size_bytes": 75538270
+    },
+    {
+      "path": "tokenizer.json",
+      "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab",
+      "size_bytes": 2203239
+    },
+    {
+      "path": "vocabulary.txt",
+      "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913",
+      "size_bytes": 459861
+    }
+  ],
+  "license": {
+    "evidence": [
+      "https://huggingface.co/Systran/faster-whisper-tiny/tree/d90ca5fe260221311c53c58e660288d3deb8d356",
+      "https://huggingface.co/api/models/Systran/faster-whisper-tiny"
+    ],
+    "observed_spdx_id": "MIT",
+    "redistribution_verified": true
+  },
+  "logical_id": "asr/faster-whisper/tiny",
+  "oci": {
+    "digest": "sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42",
+    "pullback_verified": true,
+    "repository": "ghcr.io/sempersupra/model-artifact-foundry"
+  },
+  "schema_version": 1,
+  "state": "candidate",
+  "upstream": {
+    "exact_revision": "d90ca5fe260221311c53c58e660288d3deb8d356",
+    "provider": "huggingface",
+    "repository": "Systran/faster-whisper-tiny"
+  },
+  "validation": {
+    "claims": [
+      "expected CTranslate2 files acquired from the exact upstream revision",
+      "model loads from an explicit local directory with local_files_only enabled",
+      "pinned JFK fixture transcribes in English with expected phrase checks"
+    ],
+    "profile": "faster-whisper-jfk-v1",
+    "status": "passed",
+    "tool_revision": "6ef51b0bfbb727b85fa00b65f7d70eacd378f01e"
+  }
+}
