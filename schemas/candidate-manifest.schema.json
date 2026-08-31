@@ -8,6 +8,7 @@
     "schema_version",
     "logical_id",
     "state",
+    "acquired_at",
     "upstream",
     "license",
     "files",
@@ -16,7 +17,11 @@
   ],
   "properties": {
     "schema_version": {"const": 1},
-    "logical_id": {"type": "string", "minLength": 3},
+    "logical_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._/-]*$",
+      "minLength": 3
+    },
     "state": {"enum": ["candidate", "rejected", "quarantined"]},
     "acquired_at": {"type": "string", "format": "date-time"},
     "upstream": {
