@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "logical_id": "asr/faster-whisper/tiny",
+  "source": {
+    "provider": "huggingface",
+    "repository": "Systran/faster-whisper-tiny",
+    "discovery_ref": "main"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": ["MIT"],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "asr/faster-whisper",
+    "format": "ctranslate2-whisper",
+    "expected_file_patterns": [
+      "config.json",
+      "model.bin",
+      "tokenizer.json",
+      "vocabulary.txt"
+    ],
+    "max_unpacked_bytes": 100000000
+  },
+  "validator_profile": "faster-whisper-ctranslate2-v1",
+  "redistribution_notices": [
+    "Preserve and verify upstream license/provenance evidence for the exact harvested revision."
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
