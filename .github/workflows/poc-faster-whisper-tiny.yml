@@ -1,0 +1,190 @@
+name: Faster Whisper tiny PoC
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/poc-faster-whisper-tiny.yml"
+      - "sources/faster-whisper-tiny.json"
+      - "catalog/approved.json"
+      - "schemas/**"
+      - "tools/harvest_poc.py"
+      - "tools/hydrate.py"
+      - "docs/poc/faster-whisper-tiny.md"
+      - "poc/faster-whisper-tiny.publish"
+  push:
+    branches:
+      - main
+    paths:
+      - "poc/faster-whisper-tiny.publish"
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  OCI_REPOSITORY: ghcr.io/sempersupra/model-artifact-foundry
+  UPSTREAM_REVISION: d90ca5fe260221311c53c58e660288d3deb8d356
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Validate contracts and tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+          python3 -m py_compile tools/harvest_poc.py tools/hydrate.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          pairs = [
+              ("schemas/source-declaration.schema.json", "sources/faster-whisper-tiny.json"),
+              ("schemas/approved-catalog.schema.json", "catalog/approved.json"),
+          ]
+          for schema_path, doc_path in pairs:
+              schema = json.loads(Path(schema_path).read_text())
+              jsonschema.Draft202012Validator.check_schema(schema)
+              jsonschema.validate(json.loads(Path(doc_path).read_text()), schema)
+
+          candidate_schema = json.loads(Path("schemas/candidate-manifest.schema.json").read_text())
+          jsonschema.Draft202012Validator.check_schema(candidate_schema)
+          assert Path("poc/faster-whisper-tiny.publish").read_text().strip() == \
+              "d90ca5fe260221311c53c58e660288d3deb8d356"
+          PY
+          python3 tools/hydrate.py --help >/dev/null
+
+  publish-candidate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      - name: Install pinned validation tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input \
+            "jsonschema==4.25.1" \
+            "faster-whisper==1.2.1" \
+            "ctranslate2==4.6.0"
+
+      - name: Acquire exact revision and validate locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat poc/faster-whisper-tiny.publish)" = "${UPSTREAM_REVISION}"
+          python3 tools/harvest_poc.py prepare --dist-dir dist
+
+      - name: Login to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Publish candidate OCI artifact
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT_REV="${UPSTREAM_REVISION:0:12}"
+          TAG="candidate-asr-faster-whisper-tiny-${SHORT_REV}"
+          REF="${OCI_REPOSITORY}:${TAG}"
+          oras push "${REF}" \
+            --artifact-type application/vnd.sempersupra.model-artifact.v1 \
+            --annotation "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --annotation "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --annotation "org.opencontainers.image.title=asr/faster-whisper/tiny" \
+            dist/model.tar.gz:application/vnd.sempersupra.model.tar+gzip \
+            dist/bundle-manifest.json:application/vnd.sempersupra.model.manifest.v1+json \
+            dist/NOTICE.txt:text/plain
+          DIGEST="$(oras resolve "${REF}")"
+          test "${DIGEST#sha256:}" != "${DIGEST}"
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${REF}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pull back by immutable digest and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf pullback
+          mkdir pullback
+          oras pull "${OCI_REPOSITORY}@${{ steps.publish.outputs.digest }}" --output pullback
+          python3 tools/harvest_poc.py verify-pulled --bundle-dir pullback
+
+      - name: Create candidate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          python3 tools/harvest_poc.py candidate-manifest \
+            --dist-dir dist \
+            --oci-repository "${OCI_REPOSITORY}" \
+            --digest "${{ steps.publish.outputs.digest }}" \
+            --tool-revision "${GITHUB_SHA}" \
+            --output evidence/candidate.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/candidate-manifest.schema.json").read_text())
+          doc = json.loads(Path("evidence/candidate.json").read_text())
+          jsonschema.validate(doc, schema)
+          PY
+
+      - name: Push immutable candidate evidence branch
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_PATH="candidates/asr-faster-whisper-tiny/${UPSTREAM_REVISION}/${GITHUB_SHA}.json"
+          BRANCH="evidence/faster-whisper-tiny-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$(dirname "${EVIDENCE_PATH}")"
+          cp evidence/candidate.json "${EVIDENCE_PATH}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
+          git add "${EVIDENCE_PATH}"
+          git commit -m "evidence: record faster-whisper tiny candidate"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          EVIDENCE_SHA="$(git rev-parse HEAD)"
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "sha=${EVIDENCE_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "path=${EVIDENCE_PATH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record proof summary
+        shell: bash
+        run: |
+          {
+            echo "## Faster Whisper tiny candidate"
+            echo
+            echo "- upstream revision: \`${UPSTREAM_REVISION}\`"
+            echo "- OCI repository: \`${OCI_REPOSITORY}\`"
+            echo "- OCI digest: \`${{ steps.publish.outputs.digest }}\`"
+            echo "- candidate evidence branch: \`${{ steps.evidence.outputs.branch }}\`"
+            echo "- candidate evidence commit: \`${{ steps.evidence.outputs.sha }}\`"
+            echo "- candidate evidence path: \`${{ steps.evidence.outputs.path }}\`"
+            echo
+            echo "Candidate publication is not catalog promotion."
+          } >> "${GITHUB_STEP_SUMMARY}"
