@@ -55,10 +55,9 @@
         "request": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["digest", "ref"],
+          "required": ["digest"],
           "properties": {
-            "digest": {"$ref": "#/$defs/sha256"},
-            "ref": {"type": "string", "minLength": 1}
+            "digest": {"$ref": "#/$defs/sha256"}
           }
         },
         "artifact": {
@@ -69,16 +68,14 @@
             "repository",
             "source_revision",
             "identity_strength",
-            "observation_digest",
-            "materialization_receipt_digest"
+            "observation_digest"
           ],
           "properties": {
             "provider": {"type": "string", "minLength": 1},
             "repository": {"type": "string", "minLength": 1},
             "source_revision": {"type": "string", "minLength": 1},
             "identity_strength": {"type": "string", "minLength": 1},
-            "observation_digest": {"$ref": "#/$defs/sha256"},
-            "materialization_receipt_digest": {"$ref": "#/$defs/sha256"}
+            "observation_digest": {"$ref": "#/$defs/sha256"}
           }
         },
         "representation": {
