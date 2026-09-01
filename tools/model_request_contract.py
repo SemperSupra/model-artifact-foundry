@@ -122,9 +122,9 @@ def normalize_request(request: Any) -> dict[str, Any]:
 
     envelope = _object(request["envelope"], "request.envelope")
     allowed_envelope = {
-        "max_steady_state_vram_gib",
+        "max_peak_vram_gib",
         "max_model_load_seconds",
-        "max_query_latency_ms",
+        "max_p95_query_latency_ms",
     }
     _keys(envelope, "request.envelope", set(), allowed_envelope)
     envelope_out = {
