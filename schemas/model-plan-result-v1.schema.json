@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/model-plan-result-v1.schema.json",
+  "title": "Model Artifact Foundry Plan Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_digest", "status", "reasons", "evidence"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "request_digest": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["qualified", "candidate", "unknown", "rejected"]},
+    "selection": {"$ref": "#/$defs/selection"},
+    "qualification": {"$ref": "#/$defs/qualification"},
+    "reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "representation", "runtime", "target_profile_id"],
+      "properties": {
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "repository", "source_revision", "observation_digest"],
+          "properties": {
+            "provider": {"type": "string", "minLength": 1},
+            "repository": {"type": "string", "minLength": 1},
+            "source_revision": {"type": "string", "minLength": 1},
+            "observation_digest": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "representation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "variant", "quantization"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "variant": {"type": "string", "minLength": 1},
+            "quantization": {"type": "string", "minLength": 1}
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1}
+          }
+        },
+        "target_profile_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_key", "record_digest"],
+      "properties": {
+        "subject_key": {"$ref": "#/$defs/sha256"},
+        "record_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "digest", "ref", "visibility"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "ref": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["public", "private", "local"]}
+      }
+    }
+  }
+}
