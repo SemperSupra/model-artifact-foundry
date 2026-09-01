@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/qualified-resolution-binding-v1.schema.json",
+  "title": "Model Artifact Foundry Qualified Resolution Binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "resolution",
+    "resolution_key",
+    "qualification",
+    "selection"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_digest", "target_profile_id", "environment_digest"],
+      "properties": {
+        "request_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "target_profile_id": {"type": "string", "minLength": 1},
+        "environment_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "resolution_key": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_key", "record_digest"],
+      "properties": {
+        "subject_key": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "record_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "representation", "runtime", "target_profile_id"],
+      "properties": {
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "repository", "source_revision", "observation_digest"],
+          "properties": {
+            "provider": {"type": "string", "minLength": 1},
+            "repository": {"type": "string", "minLength": 1},
+            "source_revision": {"type": "string", "minLength": 1},
+            "observation_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+          }
+        },
+        "representation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "variant", "quantization"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "variant": {"type": "string", "minLength": 1},
+            "quantization": {"type": "string", "minLength": 1}
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1}
+          }
+        },
+        "target_profile_id": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
