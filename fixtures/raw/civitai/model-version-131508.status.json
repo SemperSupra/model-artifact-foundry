@@ -1,0 +1,8 @@
+{
+  "http_status": 404,
+  "identity_note": "Previously referenced dependency; status observation is lifecycle evidence, not file identity.",
+  "kind": "http-status-observation",
+  "observed_at": "2026-09-01T06:02:57.263525Z",
+  "provider": "civitai",
+  "request": {"model_version_id": 131508}
+}

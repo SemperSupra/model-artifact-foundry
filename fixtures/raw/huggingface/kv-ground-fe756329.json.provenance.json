@@ -1,0 +1,14 @@
+{
+  "authentication": "none",
+  "captured_at": "2026-09-01T06:02:57.039799Z",
+  "endpoint_class": "model-info-with-file-metadata",
+  "projection": "identity-lifecycle-access-fields-v1",
+  "provider": "huggingface",
+  "request": {
+    "files_metadata": true,
+    "repo": "vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315",
+    "revision": "fe7563292bb52ab6c235fc3c87157e6a14017479"
+  },
+  "sanitization": "sensitive-key/value scan; no credential inputs accepted",
+  "source_url": "https://huggingface.co/api/models/vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315/revision/fe7563292bb52ab6c235fc3c87157e6a14017479?blobs=true"
+}

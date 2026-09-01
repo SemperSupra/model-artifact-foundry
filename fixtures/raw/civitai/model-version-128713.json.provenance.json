@@ -1,0 +1,10 @@
+{
+  "authentication": "none",
+  "captured_at": "2026-09-01T06:02:57.964468Z",
+  "endpoint_class": "model-version",
+  "projection": "identity-lifecycle-access-fields-v1",
+  "provider": "civitai",
+  "request": {"model_version_id": 128713},
+  "sanitization": "sensitive-key/value scan; no credential inputs accepted",
+  "source_url": "https://civitai.com/api/v1/model-versions/128713"
+}
