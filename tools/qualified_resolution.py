@@ -116,6 +116,10 @@ def _selection_from_subject(subject: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _with_binding_digest(body: dict[str, Any]) -> dict[str, Any]:
+    return {**body, "binding_digest": sha256_json(body)}
+
+
 def binding_from_qualified_receipt(
     request_doc: Any,
     environment_digest: str,
@@ -159,7 +163,7 @@ def binding_from_qualified_receipt(
         raise QualifiedResolutionError(f"qualified selection does not satisfy request: {exc}") from exc
 
     context = resolution_context(request, env_digest)
-    return {
+    body = {
         "schema_version": 1,
         "resolution": context,
         "resolution_key": resolution_key(context),
@@ -169,11 +173,16 @@ def binding_from_qualified_receipt(
         },
         "selection": selection,
     }
+    return _with_binding_digest(body)
 
 
 def validate_binding(binding_doc: Any) -> dict[str, Any]:
     binding = _object(binding_doc, "binding")
-    _keys(binding, "binding", {"schema_version", "resolution", "resolution_key", "qualification", "selection"})
+    _keys(
+        binding,
+        "binding",
+        {"schema_version", "resolution", "resolution_key", "qualification", "selection", "binding_digest"},
+    )
     if binding["schema_version"] != 1:
         raise QualifiedResolutionError("binding.schema_version must be 1")
 
@@ -219,7 +228,7 @@ def validate_binding(binding_doc: Any) -> dict[str, Any]:
     if target_profile_id != context["target_profile_id"]:
         raise QualifiedResolutionError("binding selection target does not match resolution target")
 
-    normalized = {
+    body = {
         "schema_version": 1,
         "resolution": context,
         "resolution_key": expected_key,
@@ -231,6 +240,10 @@ def validate_binding(binding_doc: Any) -> dict[str, Any]:
             "target_profile_id": target_profile_id,
         },
     }
+    expected_digest = sha256_json(body)
+    if _digest(binding["binding_digest"], "binding.binding_digest") != expected_digest:
+        raise QualifiedResolutionError("binding_digest does not match canonical binding body")
+    normalized = {**body, "binding_digest": expected_digest}
     if normalized != binding:
         raise QualifiedResolutionError("binding is not in canonical normalized form")
     return binding
@@ -289,7 +302,7 @@ def lookup(request_doc: Any, environment_digest: str, store: str | Path) -> dict
         "evidence": [
             {
                 "kind": "retained_resolution_binding",
-                "digest": sha256_json(binding),
+                "digest": binding["binding_digest"],
                 "ref": f"resolution://{binding['resolution_key']}",
                 "visibility": "local",
             }
