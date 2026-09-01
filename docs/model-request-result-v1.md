@@ -58,13 +58,15 @@ The first KV-Ground consumer is expected to require offline normal serving after
 
 `envelope` may contain any of the following only when the consumer has actually frozen a meaningful limit:
 
-- `max_steady_state_vram_gib`;
-- `max_model_load_seconds`;
-- `max_query_latency_ms`.
+- `max_peak_vram_gib` — maximum observed peak GPU-memory allocation/reservation under the defined qualification procedure;
+- `max_model_load_seconds` — maximum wall-clock time from the defined pre-load state until the model/processor pair is ready for the qualification workload;
+- `max_p95_query_latency_ms` — maximum p95 end-to-end query latency over the defined measured query set after the defined warm-up procedure.
+
+These names are intentionally measurement-specific. Generic `max_query_latency_ms` and `max_steady_state_vram_gib` were rejected before the contract was frozen because they permit materially different measurement interpretations.
 
 Omitting a limit means this request version does not constrain that dimension. Do not invent a number just to populate the schema.
 
-**Important:** the numeric values in `fixtures/request/ui-grounding-request.example.json` are deterministic contract-test values only. They are not approved first-consumer KV-Ground resource/performance thresholds. The real first-consumer envelope must be frozen separately before candidate performance is observed.
+**Important:** the numeric values in `fixtures/request/ui-grounding-request.example.json` are deterministic contract-test values only. They are not approved first-consumer KV-Ground resource/performance thresholds. The real first-consumer envelope and measurement procedure must be frozen separately before candidate performance is observed.
 
 ### Quality policy
 
