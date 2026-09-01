@@ -74,7 +74,9 @@ def test_request_is_byte_canonical_and_array_order_independent():
         lambda value: value["quality_policy"].update(
             digest="sha256:0000000000000000000000000000000000000000000000000000000000000000"
         ),
-        lambda value: value["envelope"].update(max_query_latency_ms=3001),
+        lambda value: value["envelope"].update(max_peak_vram_gib=13),
+        lambda value: value["envelope"].update(max_model_load_seconds=121),
+        lambda value: value["envelope"].update(max_p95_query_latency_ms=3001),
     ],
 )
 def test_material_request_changes_change_digest(mutator):
@@ -106,7 +108,7 @@ def test_invalid_or_duplicate_allowed_values_are_rejected():
         CONTRACT.normalize_request(value)
 
     value = request()
-    value["envelope"]["max_query_latency_ms"] = 0
+    value["envelope"]["max_p95_query_latency_ms"] = 0
     with pytest.raises(CONTRACT.ModelRequestContractError, match="positive finite"):
         CONTRACT.normalize_request(value)
 
@@ -157,16 +159,12 @@ def test_unknown_and_rejected_require_reason_and_forbid_fake_selection(status):
 
 
 def test_selection_must_satisfy_request_runtime_representation_quantization_and_target():
-    cases = [
-        ("target_profile_id", "other-target", "target"),
-    ]
-    for field, replacement, match in cases:
-        value = result_base("candidate")
-        chosen = selection()
-        chosen[field] = replacement
-        value["selection"] = chosen
-        with pytest.raises(CONTRACT.ModelRequestContractError, match=match):
-            CONTRACT.normalize_result(value, request())
+    value = result_base("candidate")
+    chosen = selection()
+    chosen["target_profile_id"] = "other-target"
+    value["selection"] = chosen
+    with pytest.raises(CONTRACT.ModelRequestContractError, match="target"):
+        CONTRACT.normalize_result(value, request())
 
     value = result_base("candidate")
     chosen = selection()
