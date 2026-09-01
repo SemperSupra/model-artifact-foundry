@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/qualification-receipt-v1.schema.json",
+  "title": "Model Artifact Foundry Qualification Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "recorded_at",
+    "subject",
+    "subject_key",
+    "result",
+    "evidence",
+    "record_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "recorded_at": {"type": "string", "minLength": 1},
+    "subject": {"$ref": "#/$defs/subject"},
+    "subject_key": {"$ref": "#/$defs/sha256"},
+    "result": {"$ref": "#/$defs/result"},
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "record_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "request",
+        "artifact",
+        "representation",
+        "runtime",
+        "target",
+        "validation"
+      ],
+      "properties": {
+        "capability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "interface"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "interface": {"type": "string", "minLength": 1}
+          }
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["digest", "ref"],
+          "properties": {
+            "digest": {"$ref": "#/$defs/sha256"},
+            "ref": {"type": "string", "minLength": 1}
+          }
+        },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "repository",
+            "source_revision",
+            "identity_strength",
+            "observation_digest",
+            "materialization_receipt_digest"
+          ],
+          "properties": {
+            "provider": {"type": "string", "minLength": 1},
+            "repository": {"type": "string", "minLength": 1},
+            "source_revision": {"type": "string", "minLength": 1},
+            "identity_strength": {"type": "string", "minLength": 1},
+            "observation_digest": {"$ref": "#/$defs/sha256"},
+            "materialization_receipt_digest": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "representation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "variant", "quantization"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "variant": {"type": "string", "minLength": 1},
+            "quantization": {"type": "string", "minLength": 1}
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "toolchain_digest", "config_digest"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "toolchain_digest": {"$ref": "#/$defs/sha256"},
+            "config_digest": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile_id", "environment_digest"],
+          "properties": {
+            "profile_id": {"type": "string", "minLength": 1},
+            "environment_digest": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "workload_id",
+            "holdout_digest",
+            "evaluator_digest",
+            "policy_digest"
+          ],
+          "properties": {
+            "project": {"type": "string", "minLength": 1},
+            "workload_id": {"type": "string", "minLength": 1},
+            "capture_manifest_digest": {"$ref": "#/$defs/sha256"},
+            "holdout_digest": {"$ref": "#/$defs/sha256"},
+            "evaluator_digest": {"$ref": "#/$defs/sha256"},
+            "policy_digest": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "result_digest"],
+      "properties": {
+        "status": {"enum": ["pass", "fail"]},
+        "result_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "quality", "resource_performance", "reasons"],
+      "properties": {
+        "outcome": {"enum": ["qualified", "rejected"]},
+        "quality": {"$ref": "#/$defs/gate"},
+        "resource_performance": {"$ref": "#/$defs/gate"},
+        "reasons": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "digest", "ref", "visibility"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "ref": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["public", "private", "local"]}
+      }
+    }
+  }
+}
