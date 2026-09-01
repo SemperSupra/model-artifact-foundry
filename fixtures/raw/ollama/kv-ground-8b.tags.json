@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "details": {
+        "context_length": 32768,
+        "embedding_length": 4096,
+        "families": [
+          "qwen3vl"
+        ],
+        "family": "qwen3vl",
+        "format": "gguf",
+        "parameter_size": "8.2B",
+        "parent_model": "",
+        "quantization_level": "Q4_K_M"
+      },
+      "digest": "fa1d74b1cd05750f3d17025f35f70272b883cf09757d771488be5cba103f7b37",
+      "model": "kv-ground-8b:latest",
+      "modified_at": "2026-06-25T16:15:09.949086687Z",
+      "name": "kv-ground-8b:latest",
+      "size": 5027786318
+    }
+  ]
+}

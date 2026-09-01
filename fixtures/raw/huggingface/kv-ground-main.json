@@ -1,0 +1,45 @@
+{
+  "author": "vocaela",
+  "cardData": {
+    "base_model": [
+      "mPLUG/GUI-Owl-1.5-8B-Instruct"
+    ],
+    "library_name": "transformers",
+    "license": "cc-by-nc-sa-4.0",
+    "pipeline_tag": "image-text-to-text"
+  },
+  "createdAt": "2026-03-16T05:54:21.000Z",
+  "disabled": false,
+  "gated": false,
+  "id": "vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315",
+  "lastModified": "2026-03-16T21:44:39.000Z",
+  "library_name": "transformers",
+  "modelId": "vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315",
+  "pipeline_tag": "image-text-to-text",
+  "private": false,
+  "safetensors": {
+    "parameters": {
+      "BF16": 8767123696
+    },
+    "total": 8767123696
+  },
+  "sha": "a3c224bdd97ed6de15baef3524eb590c480e0d78",
+  "siblings": [
+    {"blobId":"a6344aac8c09253b3b630fb776ae94478aa0275b","rfilename":".gitattributes","size":1519},
+    {"blobId":"072e6a057699cb43cdcb29c00b5f0e3a8c1072e5","rfilename":"README.md","size":8233},
+    {"blobId":"1081bacf1af7c7c6de4a585ce02cd0fd34e382da","rfilename":"chat_template.json","size":5499},
+    {"blobId":"35b3594fcf10f762df175a332d84f8cbd57de055","rfilename":"config.json","size":1468},
+    {"blobId":"3c8523257004002e8fbab1f5fb822802ba1bf46e","rfilename":"generation_config.json","size":214},
+    {"blobId":"20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0","rfilename":"merges.txt","size":1671839},
+    {"blobId":"5b2008dfc1b662bf5d9df176ef9742c4cc16f361","lfs":{"pointerSize":135,"sha256":"f164eb94dc6450a8159138c2397e46048da8b44f470783c892dfe2575980f3a6","size":4998056552},"rfilename":"model-00001-of-00004.safetensors","size":4998056552},
+    {"blobId":"6c27173c2d8ee99ba7fcd5cc4bd4efa5f496248e","lfs":{"pointerSize":135,"sha256":"f9f313c965fb5ef82ddc511c3e94b9ff3d12cb611a3a0e63b7fa88c413cf16b4","size":4915962464},"rfilename":"model-00002-of-00004.safetensors","size":4915962464},
+    {"blobId":"5f0c9dc20ca075c5489d74659459c0638f7de1ca","lfs":{"pointerSize":135,"sha256":"c312efb2b5b0102241993b3cbdba194f73aac57e9932c8438760190721709fc9","size":4915962496},"rfilename":"model-00003-of-00004.safetensors","size":4915962496},
+    {"blobId":"1b7b7637fb34a8640ad7f67f7278af00d36b1a92","lfs":{"pointerSize":135,"sha256":"cf80b49638fabf9e58cea8d9f523cbdfd7696260b87bcfcc4b6f820ee62f8cfc","size":2704357976},"rfilename":"model-00004-of-00004.safetensors","size":2704357976},
+    {"blobId":"5857ec62530eb589b1876034dd5386f1d98131a6","rfilename":"model.safetensors.index.json","size":67759},
+    {"blobId":"2ea84a437d448ff71b08df68fdd949d5cc4ebb64","rfilename":"preprocessor_config.json","size":390},
+    {"blobId":"c6cc1014128b19d1fc46b1d30a23e3b1d35db421","rfilename":"tokenizer.json","size":7032403},
+    {"blobId":"d3d3763207692c78780f4bf42d4dadf49a5c8012","rfilename":"tokenizer_config.json","size":10868},
+    {"blobId":"d8dc2a4c15c7a2c9d00d411d0dfe46557b74fead","rfilename":"video_preprocessor_config.json","size":386},
+    {"blobId":"4783fe10ac3adce15ac8f358ef5462739852c569","rfilename":"vocab.json","size":2776833}
+  ]
+}

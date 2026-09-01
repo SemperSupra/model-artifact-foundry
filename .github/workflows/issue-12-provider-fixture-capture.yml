@@ -1,0 +1,109 @@
+name: issue-12-provider-fixture-capture
+
+on:
+  pull_request:
+    paths:
+      - "tools/capture_provider_metadata.py"
+      - "tools/validate_provider_fixtures.py"
+      - "tests/test_provider_fixtures.py"
+      - "fixtures/raw/**"
+      - ".github/workflows/issue-12-provider-fixture-capture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  capture-public-metadata:
+    name: Capture public provider metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify committed fixtures offline first
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_provider_fixtures.py' -v
+          python tools/validate_provider_fixtures.py
+
+      - name: Capture Hugging Face current main metadata
+        run: |
+          set -euo pipefail
+          python tools/capture_provider_metadata.py \
+            --output fixtures/raw/huggingface/kv-ground-main.json \
+            huggingface \
+            --repo vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315 \
+            --revision main
+
+      - name: Capture Hugging Face corrected-weight revision metadata
+        run: |
+          set -euo pipefail
+          python tools/capture_provider_metadata.py \
+            --output fixtures/raw/huggingface/kv-ground-fe756329.json \
+            huggingface \
+            --repo vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315 \
+            --revision fe7563292bb52ab6c235fc3c87157e6a14017479
+
+      - name: Observe legacy Civitai dependency 131508
+        run: |
+          set -euo pipefail
+          mkdir -p fixtures/raw/civitai
+          status="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' \
+            'https://civitai.com/api/v1/model-versions/131508')"
+          CIVITAI_STATUS="$status" python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          payload = {
+              "provider": "civitai",
+              "kind": "http-status-observation",
+              "request": {"model_version_id": 131508},
+              "http_status": int(os.environ["CIVITAI_STATUS"]),
+              "observed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "identity_note": "Previously referenced dependency; status observation is lifecycle evidence, not file identity.",
+          }
+          Path("fixtures/raw/civitai/model-version-131508.status.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+          if [[ "$status" == "200" ]]; then
+            python tools/capture_provider_metadata.py \
+              --output fixtures/raw/civitai/model-version-131508.json \
+              civitai \
+              --version-id 131508
+          fi
+
+      - name: Capture live Civitai proof dependency DreamShaper 8
+        run: |
+          set -euo pipefail
+          python tools/capture_provider_metadata.py \
+            --output fixtures/raw/civitai/model-version-128713.json \
+            civitai \
+            --version-id 128713
+
+      - name: Validate complete captured working set
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_provider_fixtures.py' -v
+          python tools/validate_provider_fixtures.py
+
+      - name: Upload capture evidence for review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-12-public-provider-fixtures
+          path: fixtures/raw/
+          if-no-files-found: error
+          retention-days: 7
