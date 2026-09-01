@@ -1,47 +1,65 @@
-# Current Task — Faster Whisper Tiny Foundry Proof of Concept
+# Current Task — Identity-first Model Foundry MVP
 
-**Issue:** #3  
-**State:** COMPLETE  
-**Operationally tested head:** `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`  
-**Purpose:** prove one complete Foundry supply path for BHADA, then stop platform expansion.
+**Current implementation target:** issue #12  
+**Parent identity MVP:** #9  
+**Post-identity vertical slice:** #18  
+**First-consumer contract:** #19  
+**State:** active / bounded
 
-## Result
+## Current objective
 
-The proof succeeded end to end for logical artifact `asr/faster-whisper/tiny`.
+Finish only the metadata-only provider fixture increment required to establish exact/strongest-available model identity without downloading model weights.
 
-Approved identity:
+Issue #12 is the current implementation target. The immediate proof classes are:
 
-- upstream: `Systran/faster-whisper-tiny`
-- exact upstream revision: `d90ca5fe260221311c53c58e660288d3deb8d356`
-- OCI repository: `ghcr.io/sempersupra/model-artifact-foundry`
-- approved digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
-- candidate evidence commit: `4a82c5d72dd3fef6bef3dccdace23a5c1859636c`
-- model archive SHA-256: `9e578a3dc8d8ac2178a4e986a8f02e488c94bf814dd7ba51701591a76093c829`
-- validated runtime: `faster-whisper==1.2.1`, `ctranslate2==4.6.0`
+1. Hugging Face exact repository revision + file/Git/LFS metadata for `vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315`;
+2. one Civitai numeric model-version fixture with file identity/hash metadata;
+3. sanitized Ollama `/api/tags` + `/api/show` metadata fixture, with no pull/download;
+4. one hosted-provider observable model/version identity fixture that does not falsely claim a content digest.
 
-## Evidence
+Use fixtures/capture scripts and offline tests only as required by #12. Do not implement the full normalized schema, drift engine, scheduler, database, UI, broad catalog crawling, or model artifact storage in this increment.
 
-- publication run `33438050007`: exact-revision acquisition, local-only JFK transcription, GHCR login and candidate publication passed; initial pull verifier exposed only the ORAS-preserved `dist/` path observation;
-- recovery run `33438464760`: pulled the existing immutable digest without republishing, verified bundle/archive/per-file hashes, and produced schema-valid canonical candidate evidence;
-- approved-consumer run `33438707454`: catalog validation, fresh digest-pinned hydration, second hydration with ORAS replaced by `/bin/false`, and local-only Faster Whisper JFK transcription all passed.
+## Architecture context
 
-The operational test at `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b` produced the model directory:
+The earlier Faster-Whisper/OCI PoC succeeded and remains useful evidence for exact revision binding, digest/hash verification, R4 hydration, content-addressed rollback and offline consumption. It is **not** the current product boundary.
 
-`/tmp/foundry-cache/blobs/sha256-f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42/model`
+The current direction is a private-first model parts/placement system with shared public mechanics:
 
-For BHADA, the equivalent durable root is `/cache/models/asr`.
+`capability + target/envelope -> deterministic known solution | UNKNOWN -> bounded Generator–Validator exploration -> provider-native acquisition -> project validator -> qualification receipt -> retained knowledge`
 
-## R4 proof
+Governing principle:
 
-- **Reproducible:** source revision, per-file hashes, OCI digest, evidence commit and validator versions are fixed.
-- **Repeatable:** the approved digest hydrated successfully from a fresh cache.
-- **Reversible:** the content-addressed layout retains digest-specific blobs; selection is separate from bytes.
-- **Idempotent:** a second hydration succeeded while the ORAS executable was deliberately `/bin/false`, proving no registry access was required for an intact cached digest.
+> **Deterministic machinery owns what we know. Generator–Validator works the frontier of what we don't yet know. Successful work at that frontier should move the boundary outward.**
+
+## Provider-native ownership rule
+
+Never duplicate an artifact merely to bring it under Foundry control.
+
+Prefer:
+
+1. verified existing provider-native/local representation;
+2. exact provider-native acquisition/cache/store;
+3. alternate/mirrored/OCI representation only when availability, transformation, isolation, deployment, or rights/policy justify it.
+
+OCI registry digest is authoritative for an OCI artifact representation, but OCI is not the universal identity for every model artifact.
+
+## Critical-path after #12
+
+Do not serialize the whole observatory roadmap ahead of the first consumer. After the minimum identity semantics are sufficient for the first slice:
+
+1. complete the minimum identity resolver needed by #9;
+2. support the `desktop-ui-cv` first-consumer contract from #19;
+3. provide exact Hugging Face revision resolution and provider-native HF materialization for KV-Ground;
+4. let `desktop-ui-cv` consume a verified local/native handle and run its own quality/performance validator;
+5. retain a qualification receipt;
+6. prove an equivalent request resolves deterministically without repeated Generator–Validator research;
+7. change one material target/envelope variable and require a known alternate or explicit `UNKNOWN`;
+8. make a GO / NARROW / KILL decision before broadening providers, consumers, UI, statistics, scheduling, or catalog ingestion.
 
 ## Scope stop
 
-The Foundry proof is complete. Do not continue scheduled discovery, additional models, second-consumer work, generalized harvesting, or large-model infrastructure as part of the BHADA MVP effort.
+Do not restart the old BHADA-local artifact warehouse direction. BHADA is a later, stronger falsification consumer after `desktop-ui-cv` proves the first interface slice.
 
-BHADA #88 now has a usable artifact/catalog/hydrator contract. Return current engineering effort to BHADA's stabilization/release critical path; any further Foundry work belongs in a separate session and must re-establish value/scope before expansion.
+Do not implement future model publishing (#20) as part of the consumer-side MVP.
 
-Any commits after the operationally tested head above are documentation/control-plane closeout only unless separately revalidated.
+Any work outside the current issue must be separately bounded and must re-establish value, authority, and verification before mutation.
