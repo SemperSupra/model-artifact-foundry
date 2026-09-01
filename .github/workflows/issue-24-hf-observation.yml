@@ -5,6 +5,7 @@ on:
     paths:
       - "schemas/model-observation-v1.schema.json"
       - "tools/normalize_hf_observation.py"
+      - "tools/provider_adapters/**"
       - "tests/test_hf_observation.py"
       - "fixtures/raw/huggingface/**"
       - ".github/workflows/issue-24-hf-observation.yml"
