@@ -24,8 +24,8 @@
   },
   "envelope": {
     "max_model_load_seconds": 120,
-    "max_query_latency_ms": 3000,
-    "max_steady_state_vram_gib": 12
+    "max_p95_query_latency_ms": 3000,
+    "max_peak_vram_gib": 12
   },
   "quality_policy": {
     "id": "kv-ground-first-consumer-mvp-v1",
