@@ -1,0 +1,48 @@
+name: issue-24-hf-observation
+
+on:
+  pull_request:
+    paths:
+      - "schemas/model-observation-v1.schema.json"
+      - "tools/normalize_hf_observation.py"
+      - "tests/test_hf_observation.py"
+      - "fixtures/raw/huggingface/**"
+      - ".github/workflows/issue-24-hf-observation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deterministic-hf-observation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Run offline observation tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_hf_observation.py' -v
+
+      - name: Prove canonical CLI output is repeatable and path-independent
+        run: |
+          set -euo pipefail
+          fixture="$PWD/fixtures/raw/huggingface/kv-ground-main.json"
+          provenance="$PWD/fixtures/raw/huggingface/kv-ground-main.json.provenance.json"
+          python tools/normalize_hf_observation.py --fixture "$fixture" --provenance "$provenance" --output /tmp/observation-a.json
+          python tools/normalize_hf_observation.py --fixture "$fixture" --provenance "$provenance" --output /tmp/observation-b.json
+          cmp /tmp/observation-a.json /tmp/observation-b.json
+          python -m json.tool /tmp/observation-a.json >/dev/null
+          grep -F '"identity_strength":"repository_commit"' /tmp/observation-a.json
+          grep -F '"fixture":"fixtures/raw/huggingface/kv-ground-main.json"' /tmp/observation-a.json

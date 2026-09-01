@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/model-observation-v1.schema.json",
+  "title": "Model Artifact Foundry Minimal Observation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "locator", "observed_at", "resolved", "access", "declared_license", "files", "evidence"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "provider": {"const": "huggingface"},
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "requested_revision"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "requested_revision": {"type": "string", "minLength": 1}
+      }
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "resolved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_revision", "identity_strength"],
+      "properties": {
+        "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "identity_strength": {"const": "repository_commit"}
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["private", "gated", "disabled"],
+      "properties": {
+        "private": {"type": ["boolean", "null"]},
+        "gated": {"type": ["boolean", "string", "null"]},
+        "disabled": {"type": ["boolean", "null"]}
+      }
+    },
+    "declared_license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source", "interpretation"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "source": {"const": "huggingface-model-card-metadata"},
+        "interpretation": {"const": "declared-metadata-only"}
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size": {"type": "integer", "minimum": 0},
+          "git_blob_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "lfs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sha256", "size"],
+            "properties": {
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "size": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixture", "provenance"],
+      "properties": {
+        "fixture": {"type": "string", "minLength": 1},
+        "provenance": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
