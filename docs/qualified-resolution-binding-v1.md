@@ -36,13 +36,7 @@ The request digest already binds capability/interface, offline/runtime constrain
 
 The target environment digest binds the concrete private environment semantics separately from the public request.
 
-The key deliberately excludes:
-
-- qualification event time;
-- evidence ordering or storage reference;
-- provider-native/local model path;
-- materialization receipt path;
-- host-local resolution-store path.
+The key deliberately excludes qualification event time, evidence ordering/storage reference, provider-native/local model path, materialization receipt path, and host-local resolution-store path.
 
 ## Binding authority
 
@@ -59,7 +53,7 @@ The tool mechanically requires:
 
 A rejected qualification cannot be retained as a qualified resolution.
 
-## Binding contents
+## Binding contents and integrity
 
 The v1 binding retains:
 
@@ -68,7 +62,17 @@ The v1 binding retains:
 - exact artifact provider/repository/revision/observation digest;
 - representation ID/variant/quantization;
 - runtime ID;
-- target profile ID.
+- target profile ID;
+- canonical `binding_digest` over all of the preceding binding body.
+
+`binding_digest` is deliberately distinct from `resolution_key`:
+
+- `resolution_key` says **which request/environment lookup slot this is**;
+- `binding_digest` says **exactly what qualified subject/selection is stored in that slot**.
+
+This distinction matters because a later edit to artifact/runtime/qualification references must be detected even when request/environment have not changed.
+
+Lookup recomputes `binding_digest` and fails closed on any content mutation. The digest is also the evidence digest emitted on a successful retained-resolution result.
 
 It does not duplicate private holdout, performance, target inventory, credentials, or native model paths. Those remain evidence behind the qualification receipt.
 
@@ -87,8 +91,10 @@ Retention behavior:
 
 - new key -> atomically write canonical binding;
 - same key + byte-equivalent canonical binding -> idempotent no-op;
-- same key + conflicting valid content -> fail closed;
+- same key + different **valid** binding -> explicit conflict/fail closed;
 - malformed/tampered existing binding -> fail closed.
+
+A new qualification event for the same request/environment can legitimately have the same `resolution_key` and `subject_key` but a different qualification `record_digest`. V1 does **not** silently replace the retained decision in that case; it reports a conflict so lifecycle/requalification policy cannot emerge accidentally from file-write order.
 
 There is deliberately no daemon, database, lock service, global index, web API, expiry mechanism, or automatic replacement policy in v1.
 
@@ -102,7 +108,7 @@ compute resolution key
         |
         +-- file absent --> unknown(no_retained_qualified_resolution)
         |
-        +-- file present --> validate canonical binding
+        +-- file present --> verify resolution key + binding digest
                                |
                                +-- invalid/tampered --> error/fail closed
                                |
@@ -166,7 +172,7 @@ Public Foundry code does not own the private screenshot corpus, raw hardware inv
 
 ## R4
 
-- **reproducible:** versioned canonical context/binding;
+- **reproducible:** versioned canonical context/binding plus binding integrity digest;
 - **repeatable:** equivalent request/environment computes the same key and finds the same retained binding;
 - **reversible:** removing the file-backed state does not mutate providers/models/runtimes;
 - **idempotent:** retaining the exact same binding is a no-op with identical bytes.
