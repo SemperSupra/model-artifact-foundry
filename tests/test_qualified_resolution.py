@@ -23,7 +23,11 @@ def request() -> dict:
     return json.loads(REQUEST_FIXTURE.read_text(encoding="utf-8"))
 
 
-def qualified_receipt(*, environment_digest: str | None = None) -> dict:
+def qualified_receipt(
+    *,
+    environment_digest: str | None = None,
+    recorded_at: str | None = None,
+) -> dict:
     draft = json.loads(QUALIFICATION_DRAFT.read_text(encoding="utf-8"))
     req = request()
     digest = RESOLUTION.REQUEST.request_digest(req)
@@ -33,6 +37,8 @@ def qualified_receipt(*, environment_digest: str | None = None) -> dict:
     draft["subject"]["request"]["digest"] = digest
     draft["subject"]["target"]["profile_id"] = req["target"]["profile_id"]
     draft["subject"]["target"]["environment_digest"] = environment_digest
+    if recorded_at is not None:
+        draft["recorded_at"] = recorded_at
     return RESOLUTION.QUALIFICATION.build_receipt(draft)
 
 
@@ -96,6 +102,8 @@ def test_binding_is_derived_from_qualified_receipt_and_request():
         receipt["subject"]["artifact"]["observation_digest"]
     )
     assert binding["selection"]["runtime"]["id"] == receipt["subject"]["runtime"]["id"]
+    body = {key: value for key, value in binding.items() if key != "binding_digest"}
+    assert binding["binding_digest"] == RESOLUTION.sha256_json(body)
     assert RESOLUTION.validate_binding(binding) == binding
 
 
@@ -142,6 +150,7 @@ def test_retain_then_lookup_returns_qualified_result_without_research(tmp_path):
     assert result["qualification"] == binding["qualification"]
     assert result["selection"] == binding["selection"]
     assert result["evidence"][0]["kind"] == "retained_resolution_binding"
+    assert result["evidence"][0]["digest"] == binding["binding_digest"]
 
 
 def test_missing_binding_returns_explicit_unknown_without_selection(tmp_path):
@@ -161,20 +170,35 @@ def test_retain_is_byte_idempotent(tmp_path):
     assert same_path.read_bytes() == first
 
 
-def test_conflicting_existing_binding_fails_closed(tmp_path):
-    binding = RESOLUTION.binding_from_qualified_receipt(request(), environment(), qualified_receipt())
-    path = RESOLUTION.retain_binding(tmp_path, binding)
-    existing = json.loads(path.read_text(encoding="utf-8"))
-    existing["qualification"]["record_digest"] = (
-        "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+def test_new_qualification_event_for_same_resolution_is_explicit_conflict(tmp_path):
+    first = RESOLUTION.binding_from_qualified_receipt(
+        request(), environment(), qualified_receipt(recorded_at="2026-09-02T00:00:00+00:00")
     )
-    path.write_text(RESOLUTION.canonical_json(existing), encoding="utf-8")
+    second = RESOLUTION.binding_from_qualified_receipt(
+        request(), environment(), qualified_receipt(recorded_at="2026-09-03T00:00:00+00:00")
+    )
+    assert first["resolution_key"] == second["resolution_key"]
+    assert first["qualification"]["subject_key"] == second["qualification"]["subject_key"]
+    assert first["qualification"]["record_digest"] != second["qualification"]["record_digest"]
+    assert first["binding_digest"] != second["binding_digest"]
 
+    RESOLUTION.retain_binding(tmp_path, first)
     with pytest.raises(RESOLUTION.QualifiedResolutionError, match="conflicting retained content"):
-        RESOLUTION.retain_binding(tmp_path, binding)
+        RESOLUTION.retain_binding(tmp_path, second)
 
 
-def test_tampered_binding_fails_closed_instead_of_becoming_unknown(tmp_path):
+def test_tampered_binding_content_fails_closed_instead_of_becoming_unknown(tmp_path):
+    binding = RESOLUTION.binding_from_qualified_receipt(request(), environment(), qualified_receipt())
+    path = tmp_path / RESOLUTION.binding_filename(binding["resolution_key"])
+    tampered = copy.deepcopy(binding)
+    tampered["selection"]["artifact"]["repository"] = "attacker/other-model"
+    path.write_text(RESOLUTION.canonical_json(tampered), encoding="utf-8")
+
+    with pytest.raises(RESOLUTION.QualifiedResolutionError, match="malformed or tampered"):
+        RESOLUTION.lookup(request(), environment(), tmp_path)
+
+
+def test_tampered_resolution_key_fails_closed(tmp_path):
     binding = RESOLUTION.binding_from_qualified_receipt(request(), environment(), qualified_receipt())
     path = tmp_path / RESOLUTION.binding_filename(binding["resolution_key"])
     tampered = copy.deepcopy(binding)
@@ -187,16 +211,9 @@ def test_tampered_binding_fails_closed_instead_of_becoming_unknown(tmp_path):
         RESOLUTION.lookup(request(), environment(), tmp_path)
 
 
-def test_receipt_event_time_and_evidence_do_not_change_resolution_key():
-    first = qualified_receipt()
-    second_draft = json.loads(QUALIFICATION_DRAFT.read_text(encoding="utf-8"))
-    req = request()
-    second_draft["subject"]["request"]["digest"] = RESOLUTION.REQUEST.request_digest(req)
-    second_draft["subject"]["target"]["profile_id"] = req["target"]["profile_id"]
-    second_draft["subject"]["target"]["environment_digest"] = environment()
-    second_draft["recorded_at"] = "2026-09-03T01:02:03+00:00"
-    second_draft["evidence"] = list(reversed(second_draft["evidence"]))
-    second = RESOLUTION.QUALIFICATION.build_receipt(second_draft)
+def test_receipt_event_time_does_not_change_resolution_or_subject_key():
+    first = qualified_receipt(recorded_at="2026-09-02T00:00:00+00:00")
+    second = qualified_receipt(recorded_at="2026-09-03T01:02:03+00:00")
 
     assert first["record_digest"] != second["record_digest"]
     first_binding = RESOLUTION.binding_from_qualified_receipt(request(), environment(), first)
