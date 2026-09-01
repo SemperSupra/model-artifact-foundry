@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 from normalize_hf_observation import canonical_json, normalize_hf_observation, stable_evidence_ref  # noqa: E402
+from provider_adapters import (  # noqa: E402
+    HUGGINGFACE_ADAPTER,
+    NORMALIZE_OBSERVATION,
+    ProviderEvidenceAdapter,
+)
 
 
 def load(name: str):
@@ -24,6 +29,31 @@ class HfObservationTests(unittest.TestCase):
             fixture_ref="fixtures/raw/huggingface/" + stem + ".json",
             provenance_ref="fixtures/raw/huggingface/" + stem + ".json.provenance.json",
         )
+
+    def test_adapter_satisfies_narrow_evidence_contract(self) -> None:
+        self.assertIsInstance(HUGGINGFACE_ADAPTER, ProviderEvidenceAdapter)
+        self.assertEqual("huggingface", HUGGINGFACE_ADAPTER.provider_id)
+        self.assertEqual(frozenset({NORMALIZE_OBSERVATION}), HUGGINGFACE_ADAPTER.capabilities)
+
+    def test_wrapper_and_direct_adapter_are_equivalent(self) -> None:
+        fixture = load("kv-ground-main.json")
+        provenance = load("kv-ground-main.json.provenance.json")
+        fixture_ref = "fixtures/raw/huggingface/kv-ground-main.json"
+        provenance_ref = "fixtures/raw/huggingface/kv-ground-main.json.provenance.json"
+        via_wrapper = normalize_hf_observation(
+            fixture,
+            provenance,
+            fixture_ref=fixture_ref,
+            provenance_ref=provenance_ref,
+        )
+        direct = HUGGINGFACE_ADAPTER.normalize_observation(
+            fixture,
+            provenance,
+            fixture_ref=fixture_ref,
+            provenance_ref=provenance_ref,
+        )
+        self.assertEqual(via_wrapper, direct)
+        self.assertEqual(canonical_json(via_wrapper), canonical_json(direct))
 
     def test_current_main_exact_identity(self) -> None:
         observation = self.observation("kv-ground-main")
