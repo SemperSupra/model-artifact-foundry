@@ -154,6 +154,11 @@ def request_digest(request: Any) -> str:
     return sha256_json(normalize_request(request))
 
 
+def request_identity(request: Any) -> dict[str, Any]:
+    normalized = normalize_request(request)
+    return {"request": normalized, "request_digest": sha256_json(normalized)}
+
+
 def _normalize_evidence(value: Any) -> list[dict[str, str]]:
     if not isinstance(value, list):
         raise ModelRequestContractError("result.evidence must be an array")
@@ -317,6 +322,9 @@ def main() -> int:
     request_parser.add_argument("--input", required=True)
     request_parser.add_argument("--output")
 
+    digest_parser = subparsers.add_parser("digest")
+    digest_parser.add_argument("--input", required=True)
+
     result_parser = subparsers.add_parser("result")
     result_parser.add_argument("--request", required=True)
     result_parser.add_argument("--input", required=True)
@@ -325,7 +333,9 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "request":
         value = normalize_request(_load(args.input))
-        value = {**value, "request_digest": sha256_json(value)}
+    elif args.command == "digest":
+        print(request_digest(_load(args.input)))
+        return 0
     else:
         value = normalize_result(_load(args.input), _load(args.request))
 
