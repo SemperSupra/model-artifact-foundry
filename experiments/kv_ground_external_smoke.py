@@ -94,7 +94,10 @@ def parse_tool_call(text: str) -> dict[str, Any]:
     if (
         not isinstance(coordinate, list)
         or len(coordinate) != 2
-        or not all(isinstance(value, (int, float)) for value in coordinate)
+        or not all(
+            isinstance(value, (int, float)) and not isinstance(value, bool)
+            for value in coordinate
+        )
     ):
         raise ValueError("coordinate must be a two-number array")
     x, y = coordinate
@@ -264,6 +267,9 @@ def run_smoke(loader: str) -> dict[str, Any]:
                 "error_type": type(exc).__name__,
                 "error": str(exc),
             }
+            raise RuntimeError(
+                "model output failed the structural tool-call parser"
+            ) from exc
 
         receipt["status"] = "pass"
     except Exception as exc:
