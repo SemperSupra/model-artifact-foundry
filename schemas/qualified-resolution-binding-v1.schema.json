@@ -17,11 +17,21 @@
     "resolution": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["request_digest", "target_profile_id", "environment_digest"],
+      "required": ["request_digest", "target_profile_id", "environment_digest", "runtime"],
       "properties": {
         "request_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
         "target_profile_id": {"type": "string", "minLength": 1},
-        "environment_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        "environment_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "toolchain_digest", "config_digest"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "toolchain_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+            "config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+          }
+        }
       }
     },
     "resolution_key": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
