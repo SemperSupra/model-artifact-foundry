@@ -1,0 +1,46 @@
+name: issue-39-external-kv-ground-smoke-contract
+
+on:
+  pull_request:
+    paths:
+      - "experiments/kv_ground_external_smoke.py"
+      - "experiments/tests/test_issue_39_external_smoke.py"
+      - "docs/experiments/issue-39-external-kv-ground-smoke.md"
+      - ".github/workflows/issue-39-external-smoke-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Run offline harness contract tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/tests -p 'test_issue_39_external_smoke.py' -v
+
+      - name: Prove contract-only output is canonical and repeatable
+        run: |
+          set -euo pipefail
+          python experiments/kv_ground_external_smoke.py --contract-only --output /tmp/contract-a.json
+          python experiments/kv_ground_external_smoke.py --contract-only --output /tmp/contract-b.json
+          cmp /tmp/contract-a.json /tmp/contract-b.json
+          python -m json.tool /tmp/contract-a.json >/dev/null
+          grep -F 'fe7563292bb52ab6c235fc3c87157e6a14017479' /tmp/contract-a.json
+          grep -F 'transformers.AutoModelForCausalLM' /tmp/contract-a.json
+          grep -F 'transformers.AutoModelForImageTextToText' /tmp/contract-a.json
