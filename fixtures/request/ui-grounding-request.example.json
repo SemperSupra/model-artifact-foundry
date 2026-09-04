@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "capability": {
+    "id": "ui-grounding",
+    "interface": "desktop-ui-cv/grounding-v1"
+  },
+  "target": {
+    "profile_id": "desktop-gpu-target-a"
+  },
+  "runtime": {
+    "offline_required": true,
+    "allowed_ids": [
+      "transformers-pytorch"
+    ]
+  },
+  "representation": {
+    "allowed_ids": [
+      "hf-transformers-snapshot"
+    ],
+    "allowed_quantizations": [
+      "nf4",
+      "none"
+    ]
+  },
+  "envelope": {
+    "max_model_load_seconds": 120,
+    "max_p95_query_latency_ms": 3000,
+    "max_peak_vram_gib": 12
+  },
+  "quality_policy": {
+    "id": "kv-ground-first-consumer-mvp-v1",
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  }
+}
