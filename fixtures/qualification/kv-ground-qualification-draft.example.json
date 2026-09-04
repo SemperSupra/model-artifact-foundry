@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-02T00:00:00+00:00",
+  "subject": {
+    "capability": {
+      "id": "ui-grounding",
+      "interface": "desktop-ui-cv/grounding-v1"
+    },
+    "request": {
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "artifact": {
+      "provider": "huggingface",
+      "repository": "vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315",
+      "source_revision": "fe7563292bb52ab6c235fc3c87157e6a14017479",
+      "identity_strength": "repository_commit"
+    },
+    "representation": {
+      "id": "hf-transformers-snapshot",
+      "variant": "base",
+      "quantization": "nf4"
+    },
+    "runtime": {
+      "id": "transformers-pytorch",
+      "toolchain_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "config_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    "target": {
+      "profile_id": "desktop-gpu-target-a",
+      "environment_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    "validation": {
+      "project": "SemperSupra/desktop-ui-cv",
+      "workload_id": "kv-ground-first-consumer-v1",
+      "capture_manifest_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "holdout_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "evaluator_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "policy_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+    }
+  },
+  "result": {
+    "outcome": "qualified",
+    "quality": {
+      "status": "pass",
+      "result_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "resource_performance": {
+      "status": "pass",
+      "result_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "reasons": []
+  },
+  "evidence": [
+    {
+      "kind": "request",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "ref": "private://requests/ui-grounding-v1.json",
+      "visibility": "private"
+    },
+    {
+      "kind": "provider_observation",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "ref": "public://foundry/observations/kv-ground.json",
+      "visibility": "public"
+    },
+    {
+      "kind": "materialization_receipt",
+      "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "ref": "local://foundry/hf-materialization-receipt.json",
+      "visibility": "local"
+    },
+    {
+      "kind": "quality_evaluation",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ref": "private://desktop-ui-cv/qualification/evaluation-result.json",
+      "visibility": "private"
+    },
+    {
+      "kind": "resource_performance",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "ref": "private://desktop-ui-cv/qualification/performance-result.json",
+      "visibility": "private"
+    }
+  ]
+}
