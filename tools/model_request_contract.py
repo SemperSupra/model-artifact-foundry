@@ -192,15 +192,12 @@ def _normalize_selection(value: Any, request: dict[str, Any]) -> dict[str, Any]:
     _keys(
         artifact,
         "result.selection.artifact",
-        {"provider", "repository", "source_revision", "observation_digest"},
+        {"provider", "repository", "source_revision"},
     )
     artifact_out = {
         "provider": _text(artifact["provider"], "result.selection.artifact.provider"),
         "repository": _text(artifact["repository"], "result.selection.artifact.repository"),
         "source_revision": _text(artifact["source_revision"], "result.selection.artifact.source_revision"),
-        "observation_digest": _digest(
-            artifact["observation_digest"], "result.selection.artifact.observation_digest"
-        ),
     }
 
     representation = _object(selection["representation"], "result.selection.representation")
