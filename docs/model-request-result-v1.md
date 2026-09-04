@@ -101,7 +101,7 @@ A retained qualification already exists for this request/selection subject.
 
 Requires:
 
-- exact selection;
+- exact stable selection;
 - retained qualification `subject_key`;
 - retained qualification `record_digest`.
 
@@ -109,7 +109,7 @@ Requires:
 
 A specific exact candidate is proposed, but it has **not** yet been qualified for this subject.
 
-Requires exact selection; forbids a qualification reference.
+Requires exact stable selection; forbids a qualification reference.
 
 ### `unknown`
 
@@ -127,32 +127,37 @@ Requires explicit reason(s). Forbids selection/qualification fields. Rejection i
 
 ## Exact selection shape
 
-A `qualified` or `candidate` selection binds:
+A `qualified` or `candidate` selection binds the stable facts needed to identify the chosen execution artifact and form:
 
 - provider;
 - repository;
 - immutable source revision;
-- normalized observation digest;
 - representation ID/variant/quantization;
 - runtime ID;
 - target profile ID.
 
 The contract helper mechanically rejects a selection whose target, runtime, representation, or quantization is outside the request.
 
-The selection does not use a machine-local model path as durable identity. A materialization receipt can be retained as event evidence separately.
+The selection does not use a machine-local model path or a provider-observation event digest as durable identity. A provider-observation digest/ref and a materialization receipt belong in the result `evidence` array when they are relevant to the event.
+
+This distinction is intentional: recapturing metadata for the same immutable provider revision may change the observation event without changing what artifact was selected. The v1 contract remains conservative across different immutable source revisions; it does not attempt payload-equivalence across provider commits.
 
 ## Relationship to qualification receipt
 
-Qualification receipt v1 uses the canonical request digest as one component of the stable qualification subject key.
+Qualification receipt v1 uses the canonical request digest as one component of the stable qualification subject key and binds the same stable provider/repository/source-revision identity.
 
 This gives the determinization test a clean rule:
 
 ```text
-same request digest + same other subject facts
+same request digest + same other stable subject facts
     -> equivalent qualification subject
 
-material request/envelope change
-    -> different request digest
+provider-observation recapture only
+    -> same stable selection/subject
+    -> different event evidence may be retained
+
+material request/envelope or source-revision change
+    -> different stable identity
     -> old qualification must not be silently reused
 ```
 
