@@ -28,7 +28,6 @@ def selection() -> dict:
             "provider": "huggingface",
             "repository": "vocaela/KV-Ground-8B-BaseGuiOwl1.5-0315",
             "source_revision": "fe7563292bb52ab6c235fc3c87157e6a14017479",
-            "observation_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
         },
         "representation": {
             "id": "hf-transformers-snapshot",
@@ -124,6 +123,31 @@ def test_qualified_result_binds_retained_qualification_and_exact_selection():
     assert normalized["status"] == "qualified"
     assert normalized["selection"]["artifact"]["source_revision"] == selection()["artifact"]["source_revision"]
     assert normalized["qualification"]["subject_key"].startswith("sha256:")
+
+
+def test_provider_observation_is_evidence_not_selection_identity():
+    value = result_base("candidate")
+    chosen = selection()
+    chosen["artifact"]["observation_digest"] = (
+        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    )
+    value["selection"] = chosen
+    with pytest.raises(CONTRACT.ModelRequestContractError, match="unexpected fields"):
+        CONTRACT.normalize_result(value, request())
+
+    value = result_base("candidate")
+    value["selection"] = selection()
+    value["evidence"] = [
+        {
+            "kind": "provider_observation",
+            "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "ref": "public://foundry/observations/kv-ground.json",
+            "visibility": "public",
+        }
+    ]
+    normalized = CONTRACT.normalize_result(value, request())
+    assert normalized["selection"] == selection()
+    assert normalized["evidence"][0]["kind"] == "provider_observation"
 
 
 def test_candidate_can_name_exact_selection_but_cannot_claim_qualification():
