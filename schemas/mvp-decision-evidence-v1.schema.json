@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/mvp-decision-evidence-v1.schema.json",
+  "title": "Model Artifact Foundry MVP Decision Evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate_id",
+    "recorded_at",
+    "qualification",
+    "equivalent_repeat",
+    "changed_envelope",
+    "consumer_delta",
+    "control_r4",
+    "lifecycle"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate_id": {"type": "string", "minLength": 1},
+    "recorded_at": {"type": "string", "minLength": 1},
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_digest", "subject_key", "outcome"],
+      "properties": {
+        "receipt_digest": {"$ref": "#/$defs/sha256"},
+        "subject_key": {"$ref": "#/$defs/sha256"},
+        "outcome": {"enum": ["qualified", "rejected"]}
+      }
+    },
+    "equivalent_repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempted",
+        "repeated_subject_key",
+        "deterministic_record_lookup",
+        "generator_invoked",
+        "provider_research_invoked",
+        "evidence_digest"
+      ],
+      "properties": {
+        "attempted": {"type": "boolean"},
+        "repeated_subject_key": {"$ref": "#/$defs/sha256"},
+        "deterministic_record_lookup": {"type": "boolean"},
+        "generator_invoked": {"type": "boolean"},
+        "provider_research_invoked": {"type": "boolean"},
+        "evidence_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "changed_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempted",
+        "changed_dimension",
+        "original_request_digest",
+        "changed_request_digest",
+        "old_record_reused",
+        "deterministic_disposition",
+        "generator_invoked",
+        "evidence_digest"
+      ],
+      "properties": {
+        "attempted": {"type": "boolean"},
+        "changed_dimension": {"type": "string", "minLength": 1},
+        "original_request_digest": {"$ref": "#/$defs/sha256"},
+        "changed_request_digest": {"$ref": "#/$defs/sha256"},
+        "old_record_reused": {"type": "boolean"},
+        "deterministic_disposition": {
+          "enum": ["known_qualified_alternative", "unknown", "rejected"]
+        },
+        "generator_invoked": {"type": "boolean"},
+        "evidence_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "consumer_delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_identity_preserved",
+        "verified_local_handle_normal_path",
+        "provider_credentials_removed_from_normal_serving",
+        "implicit_provider_download_not_normal_path",
+        "provider_native_storage_preserved",
+        "repeated_research_avoided",
+        "evidence_digest"
+      ],
+      "properties": {
+        "exact_identity_preserved": {"type": "boolean"},
+        "verified_local_handle_normal_path": {"type": "boolean"},
+        "provider_credentials_removed_from_normal_serving": {"type": "boolean"},
+        "implicit_provider_download_not_normal_path": {"type": "boolean"},
+        "provider_native_storage_preserved": {"type": "boolean"},
+        "repeated_research_avoided": {"type": "boolean"},
+        "evidence_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "control_r4": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validator_policy_frozen_before_results",
+        "holdout_frozen_before_results",
+        "exact_evidence_retained",
+        "repeat_idempotent",
+        "rollback_understood",
+        "privacy_preserved",
+        "evidence_digest"
+      ],
+      "properties": {
+        "validator_policy_frozen_before_results": {"type": "boolean"},
+        "holdout_frozen_before_results": {"type": "boolean"},
+        "exact_evidence_retained": {"type": "boolean"},
+        "repeat_idempotent": {"type": "boolean"},
+        "rollback_understood": {"type": "boolean"},
+        "privacy_preserved": {"type": "boolean"},
+        "evidence_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment_digest", "assessment_ref"],
+      "properties": {
+        "assessment_digest": {"$ref": "#/$defs/sha256"},
+        "assessment_ref": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

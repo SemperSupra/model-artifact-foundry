@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "gate_id": "first-consumer-kv-ground-v1",
+  "recorded_at": "2026-09-02T00:00:00+00:00",
+  "qualification": {
+    "receipt_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "subject_key": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "outcome": "qualified"
+  },
+  "equivalent_repeat": {
+    "attempted": true,
+    "repeated_subject_key": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "deterministic_record_lookup": true,
+    "generator_invoked": false,
+    "provider_research_invoked": false,
+    "evidence_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "changed_envelope": {
+    "attempted": true,
+    "changed_dimension": "target_profile",
+    "original_request_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "changed_request_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "old_record_reused": false,
+    "deterministic_disposition": "unknown",
+    "generator_invoked": true,
+    "evidence_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "consumer_delta": {
+    "exact_identity_preserved": true,
+    "verified_local_handle_normal_path": true,
+    "provider_credentials_removed_from_normal_serving": true,
+    "implicit_provider_download_not_normal_path": true,
+    "provider_native_storage_preserved": true,
+    "repeated_research_avoided": true,
+    "evidence_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "control_r4": {
+    "validator_policy_frozen_before_results": true,
+    "holdout_frozen_before_results": true,
+    "exact_evidence_retained": true,
+    "repeat_idempotent": true,
+    "rollback_understood": true,
+    "privacy_preserved": true,
+    "evidence_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "lifecycle": {
+    "assessment_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "assessment_ref": "private://foundry/first-consumer/lifecycle-assessment.md"
+  }
+}
