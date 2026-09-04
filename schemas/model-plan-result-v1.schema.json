@@ -34,12 +34,11 @@
         "artifact": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["provider", "repository", "source_revision", "observation_digest"],
+          "required": ["provider", "repository", "source_revision"],
           "properties": {
             "provider": {"type": "string", "minLength": 1},
             "repository": {"type": "string", "minLength": 1},
-            "source_revision": {"type": "string", "minLength": 1},
-            "observation_digest": {"$ref": "#/$defs/sha256"}
+            "source_revision": {"type": "string", "minLength": 1}
           }
         },
         "representation": {
