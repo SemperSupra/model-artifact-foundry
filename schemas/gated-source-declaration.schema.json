@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/gated-source-declaration.schema.json",
+  "title": "Model Artifact Foundry Gated Source Declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "logical_id", "source", "access", "license_observation", "acquisition_policy", "local_identity"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "logical_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$", "minLength": 3},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "repository"],
+      "properties": {
+        "provider": {"enum": ["huggingface", "github-release", "https", "other"]},
+        "repository": {"type": "string", "minLength": 1}
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "provider_account_required", "terms_acceptance_required", "token_required", "dependent_acceptance"],
+      "properties": {
+        "mode": {"enum": ["user-accepted-gated", "authenticated-gated", "restricted"]},
+        "provider_account_required": {"type": "boolean"},
+        "terms_acceptance_required": {"type": "boolean"},
+        "token_required": {"type": "boolean"},
+        "dependent_acceptance": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "public_evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "license_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_spdx_id", "evidence_refs"],
+      "properties": {
+        "observed_spdx_id": {"type": ["string", "null"]},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "acquisition_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "public_harvest", "public_redistribution", "public_package_publication"],
+      "properties": {
+        "mode": {"const": "consumer-authenticated-local"},
+        "public_harvest": {"const": false},
+        "public_redistribution": {"const": false},
+        "public_package_publication": {"const": false}
+      }
+    },
+    "local_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["require_exact_upstream_revision", "digest_kind", "hash_algorithm"],
+      "properties": {
+        "require_exact_upstream_revision": {"const": true},
+        "digest_kind": {"const": "content-manifest"},
+        "hash_algorithm": {"const": "sha256"}
+      }
+    }
+  }
+}

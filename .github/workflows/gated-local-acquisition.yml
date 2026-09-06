@@ -1,0 +1,99 @@
+name: Gated artifact local acquisition
+
+on:
+  pull_request:
+    paths:
+      - "docs/contracts/gated-artifact-local-acquisition.md"
+      - "schemas/gated-source-declaration.schema.json"
+      - "schemas/local-acquisition-record.schema.json"
+      - "schemas/artifact-compatibility.schema.json"
+      - "examples/gated/**"
+      - "tools/adopt_local_artifact.py"
+      - "tools/compatibility_match.py"
+      - "tools/public_metadata_lint.py"
+      - "tests/test_gated_local_acquisition.py"
+      - "tests/test_gated_identity_kind.py"
+      - ".github/workflows/gated-local-acquisition.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/gated-source-declaration.schema.json"
+      - "schemas/local-acquisition-record.schema.json"
+      - "schemas/artifact-compatibility.schema.json"
+      - "tools/adopt_local_artifact.py"
+      - "tools/compatibility_match.py"
+      - "tests/test_gated_local_acquisition.py"
+      - "tests/test_gated_identity_kind.py"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Validate schemas and gated declaration boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          gated_schema = json.loads(Path("schemas/gated-source-declaration.schema.json").read_text())
+          local_schema = json.loads(Path("schemas/local-acquisition-record.schema.json").read_text())
+          compatibility_schema = json.loads(Path("schemas/artifact-compatibility.schema.json").read_text())
+          normal_schema = json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          declaration = json.loads(Path("examples/gated/pyannote-speaker-diarization-3.1.json").read_text())
+
+          for schema in (gated_schema, local_schema, compatibility_schema):
+              jsonschema.Draft202012Validator.check_schema(schema)
+          jsonschema.validate(declaration, gated_schema)
+
+          # A gated declaration must not accidentally validate as a normal
+          # public-harvest source declaration.
+          errors = list(jsonschema.Draft202012Validator(normal_schema).iter_errors(declaration))
+          assert errors, "gated declaration unexpectedly satisfies public-harvest source schema"
+          PY
+
+      - name: Run gated acquisition and identity tests
+        shell: bash
+        run: |
+          python3 -m unittest discover -s tests -p 'test_gated_local_acquisition.py' -v
+          python3 -m unittest discover -s tests -p 'test_gated_identity_kind.py' -v
+
+      - name: Exercise offline adoption and validate output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gated-fixture/models
+          printf '%s\n' 'pipeline: synthetic' > /tmp/gated-fixture/config.yaml
+          printf '%s' 'synthetic-gated-model-bytes' > /tmp/gated-fixture/models/weights.bin
+          python3 tools/adopt_local_artifact.py \
+            --declaration examples/gated/pyannote-speaker-diarization-3.1.json \
+            --directory /tmp/gated-fixture \
+            --source-revision abcdef1234567890 \
+            --output /tmp/local-acquisition.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/local-acquisition-record.schema.json").read_text())
+          record = json.loads(Path("/tmp/local-acquisition.json").read_text())
+          jsonschema.validate(record, schema)
+          text = json.dumps(record)
+          assert "/tmp/gated-fixture" not in text
+          assert record["artifact_identity"]["kind"] == "content-manifest"
+          assert record["redistribution"]["public_publish_allowed"] is False
+          PY
+
+      - name: Lint public gated metadata
+        run: python3 tools/public_metadata_lint.py examples/gated/pyannote-speaker-diarization-3.1.json
+
+      - name: Compile tools
+        run: python3 -m py_compile tools/adopt_local_artifact.py tools/compatibility_match.py

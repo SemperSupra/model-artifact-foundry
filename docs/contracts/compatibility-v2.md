@@ -25,15 +25,26 @@ Private environment-specific evidence belongs in `SemperSupra/model-artifact-fou
 
 ## Identity
 
-A conceptual/upstream model and an executable artifact representation are separate identities. Each independently distributable representation has its own immutable OCI digest.
+A conceptual/upstream model and an executable artifact representation are separate identities.
+
+Normal redistributable representations use an immutable OCI digest. Gated/local-only representations that cannot enter the public distribution path may instead use a deterministic `content-manifest` SHA-256 identity produced by the gated local-acquisition contract.
+
+`artifact_identity_kind` distinguishes these namespaces:
+- `oci` — normal registry-distributed Foundry artifact;
+- `content-manifest` — local-only content identity over exact upstream revision plus sorted per-file hashes.
+
+For backward compatibility, compatibility records that predate this discriminator and omit `artifact_identity_kind` are interpreted as `oci`.
 
 Example:
 
 ```text
 model: vision/siglip2/base
-  -> pytorch-safetensors-fp16 : digest A
-  -> onnx-fp16                : digest B
-  -> mlx-q8                   : digest C
+  -> pytorch-safetensors-fp16 : OCI digest A
+  -> onnx-fp16                : OCI digest B
+  -> mlx-q8                   : OCI digest C
+
+model: gated/example
+  -> locally acquired exact revision : content-manifest digest D
 ```
 
 Conversion provenance links a derived representation to its parent digest where applicable.
@@ -45,8 +56,8 @@ Public records use:
 - `publicly-validated`: exact artifact representation was exercised under public-safe validation evidence.
 
 Local/private matching may additionally report:
-- `privately-validated`: a matching private overlay record exists and passed.
-- `unqualified`: constraints do not establish incompatibility, but sufficient evidence is absent.
+- `privately-validated`: a matching private overlay record exists and passed;
+- `unqualified`: constraints do not establish incompatibility, but sufficient evidence is absent;
 - `incompatible`: deterministic required constraints conflict or private validation positively failed.
 
 `unqualified` must never be treated as `incompatible`.
@@ -62,11 +73,14 @@ The public schema permits generic fields such as OS family, architecture, accele
 ## Matching
 
 The deterministic matcher:
-1. checks hard platform/backend/runtime-family constraints;
-2. evaluates only simple version constraints it can interpret conservatively;
-3. returns `unqualified` when information is missing or a constraint cannot be safely decided;
-4. prefers matching passed private evidence over public/declarative evidence when an optional private overlay is supplied locally;
-5. never selects a host or launches a workload.
+1. checks artifact identity kind before applying private evidence;
+2. checks hard platform/backend/runtime-family constraints;
+3. evaluates only simple version constraints it can interpret conservatively;
+4. returns `unqualified` when information is missing or a constraint cannot be safely decided;
+5. prefers matching passed private evidence over public/declarative evidence when an optional private overlay is supplied locally;
+6. never selects a host or launches a workload.
+
+A legacy private overlay with no identity-kind field means `oci`; it cannot upgrade a `content-manifest` artifact.
 
 ## Private evidence projection
 

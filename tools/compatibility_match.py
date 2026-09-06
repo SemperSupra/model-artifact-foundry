@@ -121,11 +121,17 @@ def _private_environment_matches(record_env: dict[str, Any], env: dict[str, Any]
 
 def _private_result(
     artifact_digest: str,
+    artifact_identity_kind: str,
     profile: dict[str, Any],
     env: dict[str, Any],
     overlay: dict[str, Any] | None,
 ) -> tuple[str | None, str | None]:
     if not overlay or overlay.get("artifact_digest") != artifact_digest:
+        return None, None
+    # Legacy compatibility-v2 overlays predate identity kinds and therefore mean
+    # OCI. Gated/local records must opt in explicitly to content-manifest.
+    overlay_kind = overlay.get("artifact_identity_kind", "oci")
+    if overlay_kind != artifact_identity_kind:
         return None, None
     hard, _ = _hard_match(profile, env)
     if hard != "match":
@@ -148,6 +154,7 @@ def match(
     overlay: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     digest = artifact["artifact_digest"]
+    identity_kind = artifact.get("artifact_identity_kind", "oci")
     outcomes: list[dict[str, Any]] = []
     for profile in artifact.get("profiles", []):
         hard, reasons = _hard_match(profile, env)
@@ -157,9 +164,10 @@ def match(
         if hard == "unknown":
             outcomes.append({"profile_id": profile["profile_id"], "state": "unqualified", "reasons": reasons})
             continue
-        private_state, private_profile = _private_result(digest, profile, env, overlay)
+        private_state, private_profile = _private_result(digest, identity_kind, profile, env, overlay)
         if private_state:
             return {
+                "artifact_identity_kind": identity_kind,
                 "artifact_digest": digest,
                 "representation_id": artifact["representation"]["representation_id"],
                 "result": private_state,
@@ -167,6 +175,7 @@ def match(
                 "private_profile_id": private_profile,
             }
         return {
+            "artifact_identity_kind": identity_kind,
             "artifact_digest": digest,
             "representation_id": artifact["representation"]["representation_id"],
             "result": profile["claim"]["type"],
@@ -174,6 +183,7 @@ def match(
         }
     result = "incompatible" if outcomes and all(item["state"] == "incompatible" for item in outcomes) else "unqualified"
     return {
+        "artifact_identity_kind": identity_kind,
         "artifact_digest": digest,
         "representation_id": artifact["representation"]["representation_id"],
         "result": result,

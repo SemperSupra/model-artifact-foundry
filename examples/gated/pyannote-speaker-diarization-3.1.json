@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "logical_id": "audio/pyannote/speaker-diarization-3.1",
+  "source": {
+    "provider": "huggingface",
+    "repository": "pyannote/speaker-diarization-3.1"
+  },
+  "access": {
+    "mode": "user-accepted-gated",
+    "provider_account_required": true,
+    "terms_acceptance_required": true,
+    "token_required": true,
+    "dependent_acceptance": [
+      "pyannote/segmentation-3.0"
+    ],
+    "public_evidence_refs": [
+      "https://huggingface.co/pyannote/speaker-diarization-3.1",
+      "https://huggingface.co/pyannote/segmentation-3.0"
+    ]
+  },
+  "license_observation": {
+    "observed_spdx_id": "MIT",
+    "evidence_refs": [
+      "https://huggingface.co/pyannote/speaker-diarization-3.1",
+      "https://huggingface.co/pyannote/segmentation-3.0"
+    ]
+  },
+  "acquisition_policy": {
+    "mode": "consumer-authenticated-local",
+    "public_harvest": false,
+    "public_redistribution": false,
+    "public_package_publication": false
+  },
+  "local_identity": {
+    "require_exact_upstream_revision": true,
+    "digest_kind": "content-manifest",
+    "hash_algorithm": "sha256"
+  }
+}
