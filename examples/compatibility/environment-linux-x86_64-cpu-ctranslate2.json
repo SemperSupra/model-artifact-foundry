@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "platform": {
+    "os_family": "linux",
+    "architecture": "x86_64"
+  },
+  "accelerator": {
+    "backend": "cpu",
+    "vendor": null,
+    "model_class": null,
+    "memory_mib": null
+  },
+  "runtime": {
+    "family": "ctranslate2",
+    "framework_version": "4.6.0",
+    "backend_runtime_version": null
+  }
+}
