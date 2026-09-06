@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "logical_id": "embed/siglip2/base-patch16-224",
+  "source": {
+    "provider": "huggingface",
+    "repository": "google/siglip2-base-patch16-224",
+    "discovery_ref": "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "Apache-2.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "embed/siglip2",
+    "format": "safetensors",
+    "expected_file_patterns": [
+      "config.json",
+      "model.safetensors",
+      "preprocessor_config.json",
+      "special_tokens_map.json",
+      "tokenizer.json",
+      "tokenizer.model",
+      "tokenizer_config.json"
+    ],
+    "max_unpacked_bytes": 2000000000
+  },
+  "validator_profile": "siglip2-local-smoke-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/google/siglip2-base-patch16-224",
+    "Observed source license metadata: Apache-2.0"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
