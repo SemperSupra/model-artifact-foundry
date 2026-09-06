@@ -22,6 +22,24 @@
           "constraint": "validated == 4.6.0"
         }
       ]
+    },
+    "benchmark/dataset/content-policy/multilingual-slice-v1": {
+      "oci_repository": "ghcr.io/sempersupra/model-artifact-foundry",
+      "approved_digest": "sha256:b4cfc567559a831464ef6d25c254c838da396bddd251505f4d509a20eca94c34",
+      "candidate_evidence": {
+        "repository": "SemperSupra/model-artifact-foundry",
+        "commit_sha": "4a82c5d72dd3fef6bef3dccdace23a5c1859636c",
+        "manifest_path": "candidates/benchmark-content-policy-multilingual/v1/manifest.json"
+      },
+      "upstream_exact_revision": "b954108c9baaaa934b4ad842033b31a97ee30816",
+      "license_spdx_id": "MIT",
+      "approved_at": "2026-09-06T14:27:00Z",
+      "compatibility": [
+        {
+          "component": "content-policy-engine",
+          "constraint": ">= 0.1.0"
+        }
+      ]
     }
   }
 }

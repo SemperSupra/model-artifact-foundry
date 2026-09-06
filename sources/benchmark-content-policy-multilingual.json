@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "logical_id": "benchmark/dataset/content-policy/multilingual-slice-v1",
+  "source": {
+    "provider": "huggingface",
+    "repository": "EleutherAI/lm-evaluation-harness",
+    "discovery_ref": "b954108c9baaaa934b4ad842033b31a97ee30816"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "MIT"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "benchmark/dataset",
+    "format": "jsonl+manifest",
+    "expected_file_patterns": [
+      "manifest.json",
+      "samples.jsonl",
+      "labels.json",
+      "NOTICE.txt"
+    ],
+    "max_unpacked_bytes": 10000000
+  },
+  "validator_profile": "benchmark-content-policy-multilingual-v1",
+  "redistribution_notices": [
+    "Source: https://github.com/EleutherAI/lm-evaluation-harness",
+    "Observed source license metadata: MIT",
+    "Curated benign multilingual content-policy benchmark slice for cross-project evaluation"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}

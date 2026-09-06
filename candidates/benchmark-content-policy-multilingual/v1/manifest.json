@@ -1,0 +1,69 @@
+{
+  "acquired_at": "2026-09-06T14:27:04Z",
+  "compatibility": [
+    {
+      "component": "content-policy-engine",
+      "constraint": ">= 0.1.0",
+      "evidence": "benchmark-content-policy-multilingual-v1"
+    }
+  ],
+  "files": [
+    {
+      "path": "manifest.json",
+      "sha256": "7b44c82271d804cf6397cca5383c7aca374470e25da0300a537bdee19d0788fd",
+      "size_bytes": 295,
+      "upstream_identity": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/b954108c9baaaa934b4ad842033b31a97ee30816/manifest.json"
+    },
+    {
+      "path": "samples.jsonl",
+      "sha256": "1dc506194b9463d2ae7c9a8b7aabf831469f756f52f5712073107ecae1915131",
+      "size_bytes": 615,
+      "upstream_identity": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/b954108c9baaaa934b4ad842033b31a97ee30816/samples.jsonl"
+    },
+    {
+      "path": "labels.json",
+      "sha256": "de9253d2c758d37a1bc349d373e14751df6b926884cca7f996a3f0df33a50a54",
+      "size_bytes": 443,
+      "upstream_identity": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/b954108c9baaaa934b4ad842033b31a97ee30816/labels.json"
+    },
+    {
+      "path": "NOTICE.txt",
+      "sha256": "dfe2075bc663ce77711aa562a93cb88f395d1e5068109096b8db34dad73759f6",
+      "size_bytes": 380,
+      "upstream_identity": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/b954108c9baaaa934b4ad842033b31a97ee30816/NOTICE.txt"
+    }
+  ],
+  "license": {
+    "evidence": [
+      "https://github.com/EleutherAI/lm-evaluation-harness/tree/b954108c9baaaa934b4ad842033b31a97ee30816",
+      "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/b954108c9baaaa934b4ad842033b31a97ee30816/LICENSE"
+    ],
+    "observed_spdx_id": "MIT",
+    "redistribution_verified": true
+  },
+  "logical_id": "benchmark/dataset/content-policy/multilingual-slice-v1",
+  "oci": {
+    "digest": "sha256:b4cfc567559a831464ef6d25c254c838da396bddd251505f4d509a20eca94c34",
+    "pullback_verified": true,
+    "repository": "ghcr.io/sempersupra/model-artifact-foundry"
+  },
+  "schema_version": 1,
+  "state": "candidate",
+  "upstream": {
+    "exact_revision": "b954108c9baaaa934b4ad842033b31a97ee30816",
+    "provider": "huggingface",
+    "repository": "EleutherAI/lm-evaluation-harness"
+  },
+  "validation": {
+    "claims": [
+      "exact upstream revision binding present",
+      "deterministic selection manifest verified with matching item count and item IDs",
+      "schema validity of samples.jsonl, labels.json, and manifest.json verified",
+      "per-file sha256 hashes and aggregate bundle identity verified",
+      "redistribution and MIT license evidence verified"
+    ],
+    "profile": "benchmark-content-policy-multilingual-v1",
+    "status": "passed",
+    "tool_revision": "4a82c5d72dd3fef6bef3dccdace23a5c1859636c"
+  }
+}

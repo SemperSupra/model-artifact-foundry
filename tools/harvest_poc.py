@@ -107,7 +107,10 @@ def safe_extract(archive: Path, dest: Path) -> None:
                 raise RuntimeError(f"unsafe archive path: {member.name}")
             if not member.isfile():
                 raise RuntimeError(f"non-regular archive member: {member.name}")
-        tf.extractall(dest)
+        if hasattr(tarfile, 'data_filter'):
+            tf.extractall(dest, filter='data')
+        else:
+            tf.extractall(dest)
 
 
 def verify_model_files(model_dir: Path, manifest: dict) -> None:
