@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "logical_id": "benchmark/dataset/xm3600-caption-slice-v1",
+  "source": {
+    "provider": "https",
+    "repository": "https://raw.githubusercontent.com/google/crossmodal-3600/ad44c380c86cb1240666361caabaf5684507d0ef/web-data/web_captions.jsonl",
+    "discovery_ref": "ad44c380c86cb1240666361caabaf5684507d0ef"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "CC-BY-4.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "benchmark/dataset",
+    "format": "jsonl+manifest",
+    "expected_file_patterns": [
+      "NOTICE.txt",
+      "samples.jsonl",
+      "source-manifest.json"
+    ],
+    "max_unpacked_bytes": 5000000
+  },
+  "validator_profile": "xm3600-caption-slice-v1",
+  "redistribution_notices": [
+    "Source repository: https://github.com/google/crossmodal-3600",
+    "Pinned repository commit: ad44c380c86cb1240666361caabaf5684507d0ef",
+    "Pinned source path: web-data/web_captions.jsonl",
+    "Pinned Git blob SHA-1: d11a98e371419dc317f80bb457e1fe5cd8f03ea5",
+    "Pinned source byte size: 38747762",
+    "Crossmodal-3600 annotation license: CC BY 4.0",
+    "The slice preserves upstream caption strings and image identifiers; it does not assert destination semantic truth."
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
