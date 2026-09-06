@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("unix-home-path", re.compile(r"(?<!https:)(?<!http:)(?:/home/|/Users/)[A-Za-z0-9._-]+/")),
+    ("unix-home-path", re.compile(r"(?<!https:)(?<!http:)(?:/home/|/Users/)[A-Za-z0-9._-]+(?:/|\b)")),
     ("local-mount-path", re.compile(r"(?:^|[\s\"'=])/(?:mnt|media|srv|volume\d*)/[A-Za-z0-9._/-]+", re.MULTILINE)),
     ("windows-user-path", re.compile(r"[A-Za-z]:\\(?:Users|Documents and Settings)\\[^\\\s]+", re.IGNORECASE)),
     ("rfc1918-ip", re.compile(r"\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2})\b")),
@@ -42,7 +42,6 @@ def lint_text(text: str) -> list[dict[str, object]]:
 
 def lint_file(path: Path) -> list[dict[str, object]]:
     text = path.read_text(encoding="utf-8")
-    # Parse JSON when applicable to fail on malformed metadata too.
     if path.suffix.lower() == ".json":
         json.loads(text)
     return lint_text(text)
