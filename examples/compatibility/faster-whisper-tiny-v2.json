@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "artifact_digest": "sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42",
+  "model_identity": {
+    "logical_model_id": "asr/faster-whisper/tiny",
+    "upstream_repository": "Systran/faster-whisper-tiny",
+    "upstream_exact_revision": "d90ca5fe260221311c53c58e660288d3deb8d356"
+  },
+  "representation": {
+    "representation_id": "ctranslate2-upstream",
+    "format": "ctranslate2-directory",
+    "precision": null,
+    "quantization": null,
+    "derived_from_digest": null
+  },
+  "profiles": [
+    {
+      "profile_id": "linux-x86_64-cpu-ctranslate2-4.6",
+      "representation": {
+        "format": "ctranslate2-directory",
+        "precision": null,
+        "quantization": null
+      },
+      "platform": {
+        "os_family": "linux",
+        "architecture": "x86_64"
+      },
+      "accelerator": {
+        "backend": "cpu",
+        "vendor": null
+      },
+      "runtime": {
+        "family": "ctranslate2",
+        "framework_version_constraint": "==4.6.0",
+        "backend_runtime_constraint": null
+      },
+      "claim": {
+        "type": "publicly-validated",
+        "evidence_refs": [
+          "SemperSupra/model-artifact-foundry@46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b",
+          "github-actions-run:33438707454"
+        ]
+      }
+    }
+  ]
+}
