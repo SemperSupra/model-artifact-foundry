@@ -39,7 +39,6 @@ def _compare_version(actual: str | None, constraint: str | None) -> str:
         return "unknown"
     m = _VERSION_RE.fullmatch(constraint.strip())
     if not m:
-        # Exact non-numeric versions can still be compared safely.
         return "match" if actual.strip() == constraint.strip() else "unknown"
     op, expected_text = m.groups()
     op = op or "=="
@@ -50,20 +49,19 @@ def _compare_version(actual: str | None, constraint: str | None) -> str:
     width = max(len(a), len(e))
     a = a + (0,) * (width - len(a))
     e = e + (0,) * (width - len(e))
-    result = {
+    ok = {
         "==": a == e,
         ">=": a >= e,
         "<=": a <= e,
         ">": a > e,
         "<": a < e,
     }[op]
-    return "match" if result else "mismatch"
+    return "match" if ok else "mismatch"
 
 
 def _hard_match(profile: dict[str, Any], env: dict[str, Any]) -> tuple[str, list[str]]:
     reasons: list[str] = []
     unknown = False
-
     checks = [
         ("platform.os_family", profile["platform"].get("os_family"), env["platform"].get("os_family")),
         ("platform.architecture", profile["platform"].get("architecture"), env["platform"].get("architecture")),
@@ -81,16 +79,8 @@ def _hard_match(profile: dict[str, Any], env: dict[str, Any]) -> tuple[str, list
             return "mismatch", [f"{name}: requires {required!r}, environment has {actual!r}"]
 
     version_checks = [
-        (
-            "runtime.framework_version",
-            env["runtime"].get("framework_version"),
-            profile["runtime"].get("framework_version_constraint"),
-        ),
-        (
-            "runtime.backend_runtime_version",
-            env["runtime"].get("backend_runtime_version"),
-            profile["runtime"].get("backend_runtime_constraint"),
-        ),
+        ("runtime.framework_version", env["runtime"].get("framework_version"), profile["runtime"].get("framework_version_constraint")),
+        ("runtime.backend_runtime_version", env["runtime"].get("backend_runtime_version"), profile["runtime"].get("backend_runtime_constraint")),
     ]
     for name, actual, constraint in version_checks:
         state = _compare_version(actual, constraint)
@@ -99,8 +89,34 @@ def _hard_match(profile: dict[str, Any], env: dict[str, Any]) -> tuple[str, list
         if state == "unknown":
             unknown = True
             reasons.append(f"cannot safely decide {name} against {constraint!r}")
-
     return ("unknown" if unknown else "match"), reasons
+
+
+def _private_environment_matches(record_env: dict[str, Any], env: dict[str, Any]) -> bool:
+    """Require supplied environment to be at least as specific as private evidence."""
+    fields = [
+        ("platform", "os_family"),
+        ("platform", "architecture"),
+        ("accelerator", "backend"),
+        ("accelerator", "vendor"),
+        ("accelerator", "model_class"),
+        ("runtime", "family"),
+        ("runtime", "framework_version"),
+        ("runtime", "backend_runtime_version"),
+    ]
+    for group, key in fields:
+        recorded = record_env.get(group, {}).get(key)
+        if recorded is None:
+            continue
+        actual = env.get(group, {}).get(key)
+        if actual is None or _norm(recorded) != _norm(actual):
+            return False
+    recorded_memory = record_env.get("accelerator", {}).get("memory_mib")
+    actual_memory = env.get("accelerator", {}).get("memory_mib")
+    if recorded_memory is not None:
+        if actual_memory is None or int(actual_memory) < int(recorded_memory):
+            return False
+    return True
 
 
 def _private_result(
@@ -111,35 +127,11 @@ def _private_result(
 ) -> tuple[str | None, str | None]:
     if not overlay or overlay.get("artifact_digest") != artifact_digest:
         return None, None
-
+    hard, _ = _hard_match(profile, env)
+    if hard != "match":
+        return None, None
     for record in overlay.get("records", []):
-        private_env = record.get("environment", {})
-        # Map the private overlay environment into the same generic shape.
-        candidate = {
-            "platform": private_env.get("platform", {}),
-            "accelerator": private_env.get("accelerator", {}),
-            "runtime": {
-                "family": private_env.get("runtime", {}).get("family"),
-                "framework_version": private_env.get("runtime", {}).get("framework_version"),
-                "backend_runtime_version": private_env.get("runtime", {}).get("backend_runtime_version"),
-            },
-        }
-        # A private record is relevant only if the supplied environment describes
-        # the same generic execution family. Model class/memory remain diagnostic.
-        comparable = all(
-            _norm(candidate[group].get(key)) == _norm(env[group].get(key))
-            for group, key in (
-                ("platform", "os_family"),
-                ("platform", "architecture"),
-                ("accelerator", "backend"),
-                ("runtime", "family"),
-            )
-            if candidate[group].get(key) is not None and env[group].get(key) is not None
-        )
-        if not comparable:
-            continue
-        hard, _ = _hard_match(profile, env)
-        if hard == "mismatch":
+        if not _private_environment_matches(record.get("environment", {}), env):
             continue
         validation = record.get("validation", {})
         result = validation.get("result")
@@ -157,7 +149,6 @@ def match(
 ) -> dict[str, Any]:
     digest = artifact["artifact_digest"]
     outcomes: list[dict[str, Any]] = []
-
     for profile in artifact.get("profiles", []):
         hard, reasons = _hard_match(profile, env)
         if hard == "mismatch":
@@ -166,7 +157,6 @@ def match(
         if hard == "unknown":
             outcomes.append({"profile_id": profile["profile_id"], "state": "unqualified", "reasons": reasons})
             continue
-
         private_state, private_profile = _private_result(digest, profile, env, overlay)
         if private_state:
             return {
@@ -176,19 +166,13 @@ def match(
                 "matched_public_profile": profile["profile_id"],
                 "private_profile_id": private_profile,
             }
-
-        claim_type = profile["claim"]["type"]
         return {
             "artifact_digest": digest,
             "representation_id": artifact["representation"]["representation_id"],
-            "result": claim_type,
+            "result": profile["claim"]["type"],
             "matched_public_profile": profile["profile_id"],
         }
-
-    if outcomes and all(item["state"] == "incompatible" for item in outcomes):
-        result = "incompatible"
-    else:
-        result = "unqualified"
+    result = "incompatible" if outcomes and all(item["state"] == "incompatible" for item in outcomes) else "unqualified"
     return {
         "artifact_digest": digest,
         "representation_id": artifact["representation"]["representation_id"],
@@ -209,7 +193,6 @@ def main() -> int:
     parser.add_argument("--environment", required=True, help="environment profile JSON")
     parser.add_argument("--private-overlay", help="optional private overlay JSON; never persisted")
     args = parser.parse_args()
-
     result = match(_load(args.artifact) or {}, _load(args.environment) or {}, _load(args.private_overlay))
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
