@@ -1,0 +1,86 @@
+{
+  "terminal_state": "PASS_LOCAL_CANDIDATE",
+  "foundry_base_commit": "22c661e138c5ec75bce0df8fa8fb62173bc3d02d",
+  "candidate_commit": "af3400f2e4a823b9b4fc3289eb2f6f8479c6f9ba",
+  "candidate_tree": "c71fc42edba32fe488793bba6b2c99c6ac1ca829",
+  "logical_id": "embed/siglip2/base-patch16-224",
+  "upstream": {
+    "provider": "huggingface",
+    "repository": "google/siglip2-base-patch16-224",
+    "exact_revision": "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2",
+    "observed_license_spdx": "APACHE-2.0",
+    "redistribution_verified": true,
+    "evidence_urls": [
+      "https://huggingface.co/google/siglip2-base-patch16-224/tree/75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2",
+      "https://huggingface.co/api/models/google/siglip2-base-patch16-224"
+    ]
+  },
+  "consumer_context": {
+    "target": "mark-e-deyoung/content-analyzers-private PR #1",
+    "analyzer_head": "7c050b7ddbf37217c13d1e4f9fdaffdbc5a683b2"
+  },
+  "framework_versions": {
+    "python": "3.12.13",
+    "torch": "2.14.0+cu130",
+    "transformers": "5.16.1",
+    "pillow": "12.3.0"
+  },
+  "files": [
+    {
+      "path": "config.json",
+      "size_bytes": 253,
+      "sha256": "fe8b5fe6d5734360678fd71c11c21e1ea3364bd8598d34295d9206335973ffd7"
+    },
+    {
+      "path": "model.safetensors",
+      "size_bytes": 1500800904,
+      "sha256": "612923381c76ec5a9bed335d1c48827e3f2e506ac31b044b63b2031fadee6a0b"
+    },
+    {
+      "path": "preprocessor_config.json",
+      "size_bytes": 394,
+      "sha256": "9b36b57ebaf20f09bf4c22100ccc21877ea6bfe5aead0c00c59f8af8ccefacfc"
+    },
+    {
+      "path": "special_tokens_map.json",
+      "size_bytes": 636,
+      "sha256": "baec30ea10906f16adb8c18af7a34023002c1746542612b8b41c9f09e1351351"
+    },
+    {
+      "path": "tokenizer.json",
+      "size_bytes": 34363039,
+      "sha256": "cb9140fae3ac5122c972d37adf83e1248471a38147ad76f8215c8872c6fd8322"
+    },
+    {
+      "path": "tokenizer.model",
+      "size_bytes": 4241003,
+      "sha256": "61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "size_bytes": 47164,
+      "sha256": "14afe629fe4959b9e0d51e1852b8d9f7ad074f90a1a7125a4fcdd17f06e78fc8"
+    }
+  ],
+  "local_smoke_results": {
+    "command": "/home/jules/.pyenv/versions/3.12.13/bin/python3 tools/validate_siglip2.py",
+    "image_embeddings_shape": [
+      1,
+      768
+    ],
+    "text_embeddings_shape": [
+      3,
+      768
+    ],
+    "image_embeddings_finite": true,
+    "text_embeddings_finite": true,
+    "trust_remote_code": false,
+    "local_files_only": true
+  },
+  "limitations_and_stop_state": {
+    "registry_published": false,
+    "approved_catalog_promoted": false,
+    "analyzer_semantics_changed": false,
+    "stop_state": "PASS_LOCAL_CANDIDATE \u2014 local qualification complete. Model artifact downloads restricted to ephemeral VM cache. Next packaging, OCI publishing, catalog promotion, and live analyzer qualification steps remain separately unblocked."
+  }
+}
