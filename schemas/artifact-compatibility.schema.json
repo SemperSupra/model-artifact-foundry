@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/artifact-compatibility.schema.json",
+  "title": "Model Artifact Foundry Artifact Compatibility Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "artifact_digest", "model_identity", "representation", "profiles"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "model_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_model_id", "upstream_repository", "upstream_exact_revision"],
+      "properties": {
+        "logical_model_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$"},
+        "upstream_repository": {"type": "string", "minLength": 1},
+        "upstream_exact_revision": {"type": "string", "minLength": 7}
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["representation_id", "format"],
+      "properties": {
+        "representation_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$"},
+        "format": {"type": "string", "minLength": 1},
+        "precision": {"type": ["string", "null"]},
+        "quantization": {"type": ["string", "null"]},
+        "derived_from_digest": {"type": ["string", "null"], "pattern": "^(sha256:[a-f0-9]{64})?$"}
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profile_id", "representation", "platform", "accelerator", "runtime", "claim"],
+        "properties": {
+          "profile_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+          "representation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["format"],
+            "properties": {
+              "format": {"type": "string", "minLength": 1},
+              "precision": {"type": ["string", "null"]},
+              "quantization": {"type": ["string", "null"]}
+            }
+          },
+          "platform": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["os_family", "architecture"],
+            "properties": {
+              "os_family": {"type": "string", "minLength": 1},
+              "architecture": {"type": "string", "minLength": 1}
+            }
+          },
+          "accelerator": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["backend"],
+            "properties": {
+              "backend": {"type": "string", "minLength": 1},
+              "vendor": {"type": ["string", "null"]}
+            }
+          },
+          "runtime": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["family"],
+            "properties": {
+              "family": {"type": "string", "minLength": 1},
+              "framework_version_constraint": {"type": ["string", "null"]},
+              "backend_runtime_constraint": {"type": ["string", "null"]}
+            }
+          },
+          "claim": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "evidence_refs"],
+            "properties": {
+              "type": {"enum": ["declared", "publicly-validated"]},
+              "evidence_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
