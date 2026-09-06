@@ -1,0 +1,102 @@
+name: Compatibility v2 contract
+
+on:
+  pull_request:
+    paths:
+      - "docs/contracts/compatibility-v2.md"
+      - "schemas/*compatibility*.json"
+      - "schemas/environment-profile.schema.json"
+      - "schemas/candidate-manifest-v2.schema.json"
+      - "schemas/approved-catalog-v2.schema.json"
+      - "examples/compatibility/**"
+      - "examples/sources/siglip2-base-patch16-224.json"
+      - "tools/compatibility_match.py"
+      - "tools/public_metadata_lint.py"
+      - "tests/test_compatibility_v2.py"
+      - ".github/workflows/compatibility-v2-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/*compatibility*.json"
+      - "schemas/environment-profile.schema.json"
+      - "tools/compatibility_match.py"
+      - "tools/public_metadata_lint.py"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Validate schemas and regression fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          schema_paths = [
+              "schemas/compatibility-profile.schema.json",
+              "schemas/environment-profile.schema.json",
+              "schemas/artifact-compatibility.schema.json",
+              "schemas/candidate-manifest-v2.schema.json",
+              "schemas/approved-catalog-v2.schema.json",
+          ]
+          for path in schema_paths:
+              schema = json.loads(Path(path).read_text())
+              jsonschema.Draft202012Validator.check_schema(schema)
+
+          artifact_schema = json.loads(Path("schemas/artifact-compatibility.schema.json").read_text())
+          artifact = json.loads(Path("examples/compatibility/faster-whisper-tiny-v2.json").read_text())
+          jsonschema.validate(artifact, artifact_schema)
+
+          env_schema = json.loads(Path("schemas/environment-profile.schema.json").read_text())
+          env = json.loads(Path("examples/compatibility/environment-linux-x86_64-cpu-ctranslate2.json").read_text())
+          jsonschema.validate(env, env_schema)
+
+          source_schema = json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          siglip = json.loads(Path("examples/sources/siglip2-base-patch16-224.json").read_text())
+          jsonschema.validate(siglip, source_schema)
+
+          # C8 regression: v1 remains valid and the immutable approved digest is unchanged.
+          v1_catalog_schema = json.loads(Path("schemas/approved-catalog.schema.json").read_text())
+          catalog = json.loads(Path("catalog/approved.json").read_text())
+          jsonschema.validate(catalog, v1_catalog_schema)
+          expected = "sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42"
+          assert catalog["artifacts"]["asr/faster-whisper/tiny"]["approved_digest"] == expected
+          assert artifact["artifact_digest"] == expected
+          PY
+
+      - name: Run deterministic unit tests
+        run: python3 -m unittest discover -s tests -p 'test_compatibility_v2.py' -v
+
+      - name: Exercise public matcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/compatibility_match.py \
+            --artifact examples/compatibility/faster-whisper-tiny-v2.json \
+            --environment examples/compatibility/environment-linux-x86_64-cpu-ctranslate2.json \
+            | tee /tmp/match.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/match.json'))
+          assert data['result'] == 'publicly-validated', data
+          PY
+
+      - name: Lint public v2 metadata
+        run: >-
+          python3 tools/public_metadata_lint.py
+          examples/compatibility/faster-whisper-tiny-v2.json
+          examples/compatibility/environment-linux-x86_64-cpu-ctranslate2.json
+          examples/sources/siglip2-base-patch16-224.json
+
+      - name: Compile tools
+        run: python3 -m py_compile tools/compatibility_match.py tools/public_metadata_lint.py

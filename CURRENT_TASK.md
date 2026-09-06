@@ -1,47 +1,52 @@
-# Current Task — Faster Whisper Tiny Foundry Proof of Concept
+# Current Task — Compatibility v2 Public Contract
 
-**Issue:** #3  
-**State:** COMPLETE  
-**Operationally tested head:** `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`  
-**Purpose:** prove one complete Foundry supply path for BHADA, then stop platform expansion.
+**Issue:** #49  
+**Branch:** `compatibility-v2/public-contract`  
+**State:** ACTIVE-NO-HIL  
+**Prior operational proof:** Faster Whisper Tiny at `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`
 
-## Result
+## Purpose
 
-The proof succeeded end to end for logical artifact `asr/faster-whisper/tiny`.
+Extend the proven artifact identity/hydration mechanism with structured, privacy-safe artifact/runtime compatibility evidence. This is a separately authorized value case after the Faster Whisper/BHADA proof; it is not continuation of generalized harvesting.
 
-Approved identity:
+## In scope
 
-- upstream: `Systran/faster-whisper-tiny`
-- exact upstream revision: `d90ca5fe260221311c53c58e660288d3deb8d356`
-- OCI repository: `ghcr.io/sempersupra/model-artifact-foundry`
-- approved digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
-- candidate evidence commit: `4a82c5d72dd3fef6bef3dccdace23a5c1859636c`
-- model archive SHA-256: `9e578a3dc8d8ac2178a4e986a8f02e488c94bf814dd7ba51701591a76093c829`
-- validated runtime: `faster-whisper==1.2.1`, `ctranslate2==4.6.0`
+- additive v2 representation-aware candidate/catalog schemas while preserving v1;
+- public-safe compatibility and environment capability schemas;
+- deterministic conservative compatibility matcher;
+- public metadata privacy leak lint;
+- compatibility-v2 description of the existing Faster Whisper artifact without changing its digest;
+- prepared SigLIP2 source declaration for a second-consumer experiment.
 
-## Evidence
+## Public privacy boundary
 
-- publication run `33438050007`: exact-revision acquisition, local-only JFK transcription, GHCR login and candidate publication passed; initial pull verifier exposed only the ORAS-preserved `dist/` path observation;
-- recovery run `33438464760`: pulled the existing immutable digest without republishing, verified bundle/archive/per-file hashes, and produced schema-valid canonical candidate evidence;
-- approved-consumer run `33438707454`: catalog validation, fresh digest-pinned hydration, second hydration with ORAS replaced by `/bin/false`, and local-only Faster Whisper JFK transcription all passed.
+Do not require or record local hostnames, usernames, IP/network identity, local paths, device UUIDs/serials, private repository/corpus identity, or raw environment dumps. Public records contain portable generic artifact/runtime facts only.
 
-The operational test at `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b` produced the model directory:
+## Claim boundary
 
-`/tmp/foundry-cache/blobs/sha256-f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42/model`
+- `declared`: public/upstream statement.
+- `publicly-validated`: exact representation exercised with public-safe evidence.
+- `unqualified`: insufficient evidence; not incompatibility.
+- `incompatible`: deterministic required constraint conflict.
 
-For BHADA, the equivalent durable root is `/cache/models/asr`.
+Optional private evidence may be consumed locally by the matcher but is never published/persisted by this public tool. Product fitness remains product-owned.
 
-## R4 proof
+## C8 regression gate
 
-- **Reproducible:** source revision, per-file hashes, OCI digest, evidence commit and validator versions are fixed.
-- **Repeatable:** the approved digest hydrated successfully from a fresh cache.
-- **Reversible:** the content-addressed layout retains digest-specific blobs; selection is separate from bytes.
-- **Idempotent:** a second hydration succeeded while the ORAS executable was deliberately `/bin/false`, proving no registry access was required for an intact cached digest.
+The approved Faster Whisper identity remains unchanged:
+- logical artifact: `asr/faster-whisper/tiny`
+- digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
 
-## Scope stop
+Compatibility metadata must not rewrite artifact bytes or invalidate the existing hydration/R4 proof.
 
-The Foundry proof is complete. Do not continue scheduled discovery, additional models, second-consumer work, generalized harvesting, or large-model infrastructure as part of the BHADA MVP effort.
+## C9 hold
 
-BHADA #88 now has a usable artifact/catalog/hydrator contract. Return current engineering effort to BHADA's stabilization/release critical path; any further Foundry work belongs in a separate session and must re-establish value/scope before expansion.
+`google/siglip2-base-patch16-224` is preparation only. This task does not authorize harvesting, package publication, approval, or hardware compatibility claims.
 
-Any commits after the operationally tested head above are documentation/control-plane closeout only unless separately revalidated.
+## Non-goals
+
+No host registry, scheduler, placement engine, GPU manager, generic environment solver, automatic representation conversion, benchmark storage, product qualification, private evidence publication, or HIL validation.
+
+## Acceptance
+
+CI validates schemas and fixtures, exercises matcher/lint behavior, and asserts the existing Faster Whisper digest remains unchanged. Stop before any local hardware compatibility claim.

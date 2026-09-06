@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/candidate-manifest-v2.schema.json",
+  "title": "Model Artifact Foundry Candidate Manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "logical_id",
+    "state",
+    "acquired_at",
+    "upstream",
+    "model_identity",
+    "representation",
+    "license",
+    "files",
+    "validation",
+    "compatibility_profiles",
+    "oci"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "logical_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$", "minLength": 3},
+    "state": {"enum": ["candidate", "rejected", "quarantined"]},
+    "acquired_at": {"type": "string", "format": "date-time"},
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "repository", "exact_revision"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "repository": {"type": "string", "minLength": 1},
+        "exact_revision": {"type": "string", "minLength": 7}
+      }
+    },
+    "model_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_model_id"],
+      "properties": {
+        "logical_model_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$"}
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["representation_id", "format"],
+      "properties": {
+        "representation_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]*$"},
+        "format": {"type": "string", "minLength": 1},
+        "precision": {"type": ["string", "null"]},
+        "quantization": {"type": ["string", "null"]},
+        "derived_from_digest": {"type": ["string", "null"], "pattern": "^(sha256:[a-f0-9]{64})?$"}
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_spdx_id", "redistribution_verified", "evidence"],
+      "properties": {
+        "observed_spdx_id": {"type": "string", "minLength": 1},
+        "redistribution_verified": {"const": true},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "upstream_identity": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "tool_revision", "status", "claims"],
+      "properties": {
+        "profile": {"type": "string", "minLength": 1},
+        "tool_revision": {"type": "string", "minLength": 7},
+        "status": {"enum": ["passed", "failed", "quarantined"]},
+        "claims": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "compatibility_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profile_id", "platform", "accelerator", "runtime", "claim"],
+        "properties": {
+          "profile_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+          "platform": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["os_family", "architecture"],
+            "properties": {
+              "os_family": {"type": "string", "minLength": 1},
+              "architecture": {"type": "string", "minLength": 1}
+            }
+          },
+          "accelerator": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["backend"],
+            "properties": {
+              "backend": {"type": "string", "minLength": 1},
+              "vendor": {"type": ["string", "null"]}
+            }
+          },
+          "runtime": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["family"],
+            "properties": {
+              "family": {"type": "string", "minLength": 1},
+              "framework_version_constraint": {"type": ["string", "null"]},
+              "backend_runtime_constraint": {"type": ["string", "null"]}
+            }
+          },
+          "claim": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "evidence_refs"],
+            "properties": {
+              "type": {"enum": ["declared", "publicly-validated"]},
+              "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        }
+      }
+    },
+    "oci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "digest", "pullback_verified"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "pullback_verified": {"const": true}
+      }
+    }
+  }
+}

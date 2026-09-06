@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/environment-profile.schema.json",
+  "title": "Model Artifact Foundry Environment Capability Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "platform", "accelerator", "runtime"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os_family", "architecture"],
+      "properties": {
+        "os_family": {"type": "string", "minLength": 1},
+        "architecture": {"type": "string", "minLength": 1}
+      }
+    },
+    "accelerator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend"],
+      "properties": {
+        "backend": {"type": "string", "minLength": 1},
+        "vendor": {"type": ["string", "null"]},
+        "model_class": {"type": ["string", "null"]},
+        "memory_mib": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family"],
+      "properties": {
+        "family": {"type": "string", "minLength": 1},
+        "framework_version": {"type": ["string", "null"]},
+        "backend_runtime_version": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
