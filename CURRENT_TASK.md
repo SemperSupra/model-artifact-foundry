@@ -1,41 +1,38 @@
 # Current Task — Gated Artifact Local Acquisition
 
 **Issue:** #51  
-**Branch:** `gated-artifacts/local-acquisition`  
-**State:** ACTIVE-NO-HIL  
+**State:** COMPLETE  
+**Merged PR:** #52  
+**Merge commit:** `c3a78b4c7b6293603c09e008882ebae5c8e31e6f`  
 **Prior compatibility-v2 merge:** `c3a5e12f74daf529545ed94f98f625c6f600652a`
 
-## Purpose
+## Result
 
-Support gated/user-accepted upstream artifacts without weakening the Foundry public redistribution boundary.
+The Foundry now supports gated/user-accepted upstream artifacts without weakening the public redistribution boundary.
 
-## In scope
+Delivered:
 
 - separate public-safe gated-source declaration;
-- fail-closed policy that disables public harvest, redistribution and package publication;
+- fail-closed policy disabling public harvest, redistribution and package publication;
 - offline adoption of already-authorized local bytes;
 - deterministic `content-manifest` SHA-256 identity over exact upstream revision and sorted per-file hashes;
-- no serialization of local absolute paths or provider credentials;
+- path-free local acquisition records with no provider credentials or user acceptance state;
 - compatibility identity-kind discriminator (`oci` vs `content-manifest`) with legacy records defaulting to `oci`;
-- public example based on the documented gated access requirements of `pyannote/speaker-diarization-3.1` and its `pyannote/segmentation-3.0` dependency.
+- matcher protection preventing legacy OCI private evidence from upgrading a content-manifest artifact;
+- public example based only on documented gated access requirements for `pyannote/speaker-diarization-3.1` and `pyannote/segmentation-3.0`.
 
-## Boundary
+## Verification
+
+- PR gated-artifact contract CI passed.
+- Compatibility-v2 regression CI passed.
+- Faster Whisper PoC regression passed on the PR.
+- Post-merge gated-artifact run `34057088900` passed.
+- Post-merge compatibility-v2 run `34057088936` passed.
+
+## Boundary retained
 
 The public Foundry does not authenticate to gated providers, accept terms for a user, hold provider tokens, download gated bytes, or publish them.
 
-The consumer independently satisfies upstream requirements and downloads the exact artifact. Foundry tooling begins only after the bytes are local.
+No token management, login flow, automatic terms acceptance, browser automation, gated byte publication, private repackaging, host inventory, environment solver, model conversion, HIL compatibility claim, or product qualification was introduced.
 
-## Acceptance
-
-CI must prove:
-1. a gated declaration validates only under the gated contract and does not satisfy the normal public-harvest source declaration;
-2. local adoption is deterministic and independent of the source directory path;
-3. content or exact-revision changes change identity;
-4. symlinks are rejected;
-5. output records contain no local absolute source path and disable public publication;
-6. legacy OCI compatibility overlays cannot be confused with `content-manifest` identities;
-7. public gated metadata passes the existing privacy lint.
-
-## Non-goals
-
-No token management, login flow, automatic terms acceptance, browser automation, gated byte publication, private repackaging, host inventory, environment solver, model conversion, or product qualification.
+Future gated-model use begins with a consumer independently satisfying upstream access requirements and downloading an exact revision; Foundry tooling begins only after those bytes are local.
