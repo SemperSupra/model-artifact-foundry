@@ -9,6 +9,7 @@ on:
       - "schemas/candidate-manifest-v2.schema.json"
       - "schemas/approved-catalog-v2.schema.json"
       - "examples/compatibility/**"
+      - "examples/sources/siglip2-base-patch16-224.json"
       - "tools/compatibility_match.py"
       - "tools/public_metadata_lint.py"
       - "tests/test_compatibility_v2.py"
@@ -60,6 +61,10 @@ jobs:
           env = json.loads(Path("examples/compatibility/environment-linux-x86_64-cpu-ctranslate2.json").read_text())
           jsonschema.validate(env, env_schema)
 
+          source_schema = json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          siglip = json.loads(Path("examples/sources/siglip2-base-patch16-224.json").read_text())
+          jsonschema.validate(siglip, source_schema)
+
           # C8 regression: v1 remains valid and the immutable approved digest is unchanged.
           v1_catalog_schema = json.loads(Path("schemas/approved-catalog.schema.json").read_text())
           catalog = json.loads(Path("catalog/approved.json").read_text())
@@ -91,6 +96,7 @@ jobs:
           python3 tools/public_metadata_lint.py
           examples/compatibility/faster-whisper-tiny-v2.json
           examples/compatibility/environment-linux-x86_64-cpu-ctranslate2.json
+          examples/sources/siglip2-base-patch16-224.json
 
       - name: Compile tools
         run: python3 -m py_compile tools/compatibility_match.py tools/public_metadata_lint.py
