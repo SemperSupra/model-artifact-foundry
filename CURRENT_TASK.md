@@ -1,52 +1,41 @@
-# Current Task — Compatibility v2 Public Contract
+# Current Task — Gated Artifact Local Acquisition
 
-**Issue:** #49  
-**Branch:** `compatibility-v2/public-contract`  
+**Issue:** #51  
+**Branch:** `gated-artifacts/local-acquisition`  
 **State:** ACTIVE-NO-HIL  
-**Prior operational proof:** Faster Whisper Tiny at `46dc566f59a8ab28a5a00c1eeaa2e6ef132c014b`
+**Prior compatibility-v2 merge:** `c3a5e12f74daf529545ed94f98f625c6f600652a`
 
 ## Purpose
 
-Extend the proven artifact identity/hydration mechanism with structured, privacy-safe artifact/runtime compatibility evidence. This is a separately authorized value case after the Faster Whisper/BHADA proof; it is not continuation of generalized harvesting.
+Support gated/user-accepted upstream artifacts without weakening the Foundry public redistribution boundary.
 
 ## In scope
 
-- additive v2 representation-aware candidate/catalog schemas while preserving v1;
-- public-safe compatibility and environment capability schemas;
-- deterministic conservative compatibility matcher;
-- public metadata privacy leak lint;
-- compatibility-v2 description of the existing Faster Whisper artifact without changing its digest;
-- prepared SigLIP2 source declaration for a second-consumer experiment.
+- separate public-safe gated-source declaration;
+- fail-closed policy that disables public harvest, redistribution and package publication;
+- offline adoption of already-authorized local bytes;
+- deterministic `content-manifest` SHA-256 identity over exact upstream revision and sorted per-file hashes;
+- no serialization of local absolute paths or provider credentials;
+- compatibility identity-kind discriminator (`oci` vs `content-manifest`) with legacy records defaulting to `oci`;
+- public example based on the documented gated access requirements of `pyannote/speaker-diarization-3.1` and its `pyannote/segmentation-3.0` dependency.
 
-## Public privacy boundary
+## Boundary
 
-Do not require or record local hostnames, usernames, IP/network identity, local paths, device UUIDs/serials, private repository/corpus identity, or raw environment dumps. Public records contain portable generic artifact/runtime facts only.
+The public Foundry does not authenticate to gated providers, accept terms for a user, hold provider tokens, download gated bytes, or publish them.
 
-## Claim boundary
-
-- `declared`: public/upstream statement.
-- `publicly-validated`: exact representation exercised with public-safe evidence.
-- `unqualified`: insufficient evidence; not incompatibility.
-- `incompatible`: deterministic required constraint conflict.
-
-Optional private evidence may be consumed locally by the matcher but is never published/persisted by this public tool. Product fitness remains product-owned.
-
-## C8 regression gate
-
-The approved Faster Whisper identity remains unchanged:
-- logical artifact: `asr/faster-whisper/tiny`
-- digest: `sha256:f2d664ae986b0b0598037a9f0b929fd0b0b748871474a06c84658c1f2a1a4b42`
-
-Compatibility metadata must not rewrite artifact bytes or invalidate the existing hydration/R4 proof.
-
-## C9 hold
-
-`google/siglip2-base-patch16-224` is preparation only. This task does not authorize harvesting, package publication, approval, or hardware compatibility claims.
-
-## Non-goals
-
-No host registry, scheduler, placement engine, GPU manager, generic environment solver, automatic representation conversion, benchmark storage, product qualification, private evidence publication, or HIL validation.
+The consumer independently satisfies upstream requirements and downloads the exact artifact. Foundry tooling begins only after the bytes are local.
 
 ## Acceptance
 
-CI validates schemas and fixtures, exercises matcher/lint behavior, and asserts the existing Faster Whisper digest remains unchanged. Stop before any local hardware compatibility claim.
+CI must prove:
+1. a gated declaration validates only under the gated contract and does not satisfy the normal public-harvest source declaration;
+2. local adoption is deterministic and independent of the source directory path;
+3. content or exact-revision changes change identity;
+4. symlinks are rejected;
+5. output records contain no local absolute source path and disable public publication;
+6. legacy OCI compatibility overlays cannot be confused with `content-manifest` identities;
+7. public gated metadata passes the existing privacy lint.
+
+## Non-goals
+
+No token management, login flow, automatic terms acceptance, browser automation, gated byte publication, private repackaging, host inventory, environment solver, model conversion, or product qualification.
