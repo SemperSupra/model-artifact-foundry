@@ -7,6 +7,7 @@
   "required": ["schema_version", "artifact_digest", "model_identity", "representation", "profiles"],
   "properties": {
     "schema_version": {"const": 1},
+    "artifact_identity_kind": {"enum": ["oci", "content-manifest"]},
     "artifact_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
     "model_identity": {
       "type": "object",
