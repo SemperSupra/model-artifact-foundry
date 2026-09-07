@@ -56,8 +56,10 @@ class TestOpenCycKBCandidate(unittest.TestCase):
         self.assertEqual(evidence["upstream"]["repository"], "openmindproject/opencyc-backups")
         self.assertEqual(evidence["upstream"]["exact_revision"], UPSTREAM_REVISION)
 
-        self.assertEqual(evidence["license"]["observed_spdx_id"], "OPL-1.0")
+        self.assertEqual(evidence["license"]["observed_spdx_id"], "Apache-2.0")
         self.assertTrue(evidence["license"]["redistribution_verified"])
+        self.assertTrue(any("Apache" in item for item in evidence["license"]["evidence"]))
+        self.assertTrue(any("Knowledge Server" in item for item in evidence["license"]["evidence"]))
 
         self.assertEqual(len(evidence["files"]), 65)
         self.assertTrue(len(evidence["content_fingerprint"]) == 64)

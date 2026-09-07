@@ -8,7 +8,7 @@
   },
   "license_policy": {
     "allowed_spdx_ids": [
-      "OPL-1.0"
+      "Apache-2.0"
     ],
     "require_redistributable": true,
     "allow_custom": false,
@@ -28,7 +28,8 @@
   "validator_profile": "opencyc-kb-structure-v1",
   "redistribution_notices": [
     "Source: https://github.com/openmindproject/opencyc-backups",
-    "OpenCyc Knowledge Base/CycL Content Copyright (c) 1995-2012 Cycorp Inc. Released under Open Content License (OPL-1.0)."
+    "OpenCyc Knowledge Base / CycL Content Copyright (c) 2001-2012 Cycorp, Inc. Licensed under Apache License 2.0 (bundled LEGAL.txt).",
+    "Excluded non-target material: OpenCyc Knowledge Server binary is separately licensed under Cycorp Free-of-Charge Software License."
   ],
   "promotion_policy": {
     "mode": "review-required"

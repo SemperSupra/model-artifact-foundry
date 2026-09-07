@@ -290,11 +290,12 @@ def run_qualification(cache_dir: Path, output_file: Path) -> dict:
                 "archive_size_bytes": archive_path.stat().st_size,
             },
             "license": {
-                "observed_spdx_id": "OPL-1.0",
+                "observed_spdx_id": "Apache-2.0",
                 "redistribution_verified": True,
                 "evidence": [
                     f"https://github.com/{UPSTREAM_REPO}/tree/{UPSTREAM_REVISION}",
-                    "OpenCyc Knowledge Base/CycL Content Copyright (c) 1995-2012 Cycorp Inc. Released under Open Content License (OPL-1.0).",
+                    "Bundled LEGAL.txt in opencyc-4.0-linux.tgz specifies: 'The OpenCyc Knowledge Base consists of code, written in the declarative language CycL, that represents or supports the representation of facts and rules pertaining to consensus reality. The OpenCyc Knowledge Base is licensed under the Apache License, Version 2.0'.",
+                    "Excluded non-target material: OpenCyc Knowledge Server binary is separately governed by Cycorp Free-of-Charge Software License.",
                 ],
             },
             "files": files_run1,

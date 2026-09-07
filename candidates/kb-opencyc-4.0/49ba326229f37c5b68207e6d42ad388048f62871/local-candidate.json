@@ -2,8 +2,8 @@
   "terminal_state": "PARTIAL_LOCAL_CANDIDATE",
   "foundry_start_commit": "6bb32dcbb82b40b9720f018857a50f9c321f97e9",
   "foundry_start_tree": "f09fa13e6dd4f8fc3cf9d71e0b1d280255e6e0f3",
-  "candidate_commit": "6bb32dcbb82b40b9720f018857a50f9c321f97e9",
-  "candidate_tree": "f09fa13e6dd4f8fc3cf9d71e0b1d280255e6e0f3",
+  "candidate_commit": "77d7f244b9606e61f696b38d8383ada6ae1b28fc",
+  "candidate_tree": "7077097cd609aba49b08b3caaf640831b4d87c23",
   "logical_id": "kb/opencyc/4.0",
   "upstream": {
     "provider": "github-release",
@@ -14,11 +14,12 @@
     "archive_size_bytes": 191506807
   },
   "license": {
-    "observed_spdx_id": "OPL-1.0",
+    "observed_spdx_id": "Apache-2.0",
     "redistribution_verified": true,
     "evidence": [
       "https://github.com/openmindproject/opencyc-backups/tree/49ba326229f37c5b68207e6d42ad388048f62871",
-      "OpenCyc Knowledge Base/CycL Content Copyright (c) 1995-2012 Cycorp Inc. Released under Open Content License (OPL-1.0)."
+      "Bundled LEGAL.txt in opencyc-4.0-linux.tgz specifies: 'The OpenCyc Knowledge Base consists of code, written in the declarative language CycL, that represents or supports the representation of facts and rules pertaining to consensus reality. The OpenCyc Knowledge Base is licensed under the Apache License, Version 2.0'.",
+      "Excluded non-target material: OpenCyc Knowledge Server binary is separately governed by Cycorp Free-of-Charge Software License."
     ]
   },
   "files": [
