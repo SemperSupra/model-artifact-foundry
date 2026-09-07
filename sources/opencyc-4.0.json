@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "logical_id": "kb/opencyc/4.0",
+  "source": {
+    "provider": "github-release",
+    "repository": "openmindproject/opencyc-backups",
+    "discovery_ref": "49ba326229f37c5b68207e6d42ad388048f62871"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "Apache-2.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "kb/opencyc",
+    "format": "cyc-units",
+    "expected_file_patterns": [
+      "*.cfasl",
+      "*.text",
+      "*.fht",
+      "manifest"
+    ],
+    "max_unpacked_bytes": 1000000000
+  },
+  "validator_profile": "opencyc-kb-structure-v1",
+  "redistribution_notices": [
+    "Source: https://github.com/openmindproject/opencyc-backups",
+    "OpenCyc Knowledge Base / CycL Content Copyright (c) 2001-2012 Cycorp, Inc. Licensed under Apache License 2.0 (bundled LEGAL.txt).",
+    "Excluded non-target material: OpenCyc Knowledge Server binary is separately licensed under Cycorp Free-of-Charge Software License."
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
