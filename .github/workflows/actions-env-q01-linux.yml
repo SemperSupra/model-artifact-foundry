@@ -1,0 +1,211 @@
+name: Actions environment qualification Q0.1 - Linux
+
+on:
+  push:
+    branches:
+      - exp/actions-env-q01-linux-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  linux-host:
+    name: host-${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-slim]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Common deterministic workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p q01
+          printf 'alpha\nbeta\ngamma\n' > q01/input.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, platform
+          p=Path('q01/input.txt')
+          data=p.read_bytes()
+          out={"sha256":hashlib.sha256(data).hexdigest(),"lines":len(data.splitlines()),"machine":platform.machine(),"platform":platform.platform()}
+          Path('q01/common.json').write_text(json.dumps(out,sort_keys=True)+"\n")
+          print(out)
+          PY
+          test "$(python3 -c "import json;print(json.load(open('q01/common.json'))['lines'])")" = 3
+
+      - name: Privilege and KVM capability
+        shell: bash
+        run: |
+          set -u
+          {
+            echo "runner=${{ matrix.runner }}"
+            id
+            uname -a
+            echo "sudo=$(command -v sudo || true)"
+            ls -l /dev/kvm 2>/dev/null || true
+            python3 - <<'PY'
+          import os, struct
+          path='/dev/kvm'
+          KVM_GET_API_VERSION=0xAE00
+          try:
+              import fcntl
+              fd=os.open(path, os.O_RDWR)
+              try:
+                  version=fcntl.ioctl(fd,KVM_GET_API_VERSION,0)
+                  print(f'KVM_IOCTL=PASS version={version}')
+              finally:
+                  os.close(fd)
+          except Exception as e:
+              print(f'KVM_IOCTL=ABSENT_OR_UNUSABLE {type(e).__name__}: {e}')
+          PY
+          } | tee q01/kvm.txt
+
+      - name: Docker practical proof when daemon exists
+        shell: bash
+        run: |
+          set -u
+          if ! command -v docker >/dev/null 2>&1; then
+            echo 'DOCKER=ABSENT' | tee q01/docker.txt
+            exit 0
+          fi
+          if ! docker info >/dev/null 2>&1; then
+            echo 'DOCKER_DAEMON=UNAVAILABLE' | tee q01/docker.txt
+            exit 0
+          fi
+          mkdir -p q01/docker
+          cat > q01/docker/main.go <<'EOF'
+          package main
+          import (
+            "fmt"
+            "net/http"
+          )
+          func main(){
+            http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){fmt.Fprint(w,"q01-ok")})
+            if err:=http.ListenAndServe(":8080",nil); err!=nil { panic(err) }
+          }
+          EOF
+          if ! command -v go >/dev/null 2>&1; then
+            echo 'DOCKER=DAEMON_PRESENT GO=ABSENT BUILD_SKIPPED' | tee q01/docker.txt
+            exit 0
+          fi
+          (cd q01/docker && CGO_ENABLED=0 GOOS=linux GOARCH=$(case "$(uname -m)" in x86_64) echo amd64;; aarch64|arm64) echo arm64;; *) echo amd64;; esac) go build -o server main.go)
+          cat > q01/docker/Dockerfile <<'EOF'
+          FROM scratch
+          COPY server /server
+          ENTRYPOINT ["/server"]
+          EOF
+          docker build -t actions-q01 q01/docker
+          cid=$(docker run -d -p 18080:8080 actions-q01)
+          cleanup(){ docker rm -f "$cid" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 20); do
+            body=$(curl -fsS http://127.0.0.1:18080/ 2>/dev/null || true)
+            [ "$body" = q01-ok ] && break
+            sleep 0.25
+          done
+          test "$body" = q01-ok
+          echo 'DOCKER_BUILD_RUN_NETWORK=PASS' | tee q01/docker.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q01-${{ matrix.runner }}
+          path: q01/
+
+  job-container:
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    steps:
+      - name: Common workload in job container
+        shell: bash
+        run: |
+          set -e
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 >/dev/null
+          mkdir -p q01
+          printf 'alpha\nbeta\ngamma\n' > q01/input.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,platform
+          d=Path('q01/input.txt').read_bytes()
+          Path('q01/common.json').write_text(json.dumps({"sha256":hashlib.sha256(d).hexdigest(),"lines":len(d.splitlines()),"machine":platform.machine()},sort_keys=True)+"\n")
+          PY
+          id | tee q01/identity.txt
+          ls -l /dev/kvm 2>/dev/null | tee -a q01/identity.txt || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q01-job-container
+          path: q01/
+
+  service-container:
+    runs-on: ubuntu-24.04
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 16379:6379
+    steps:
+      - name: Service topology proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p q01
+          python3 - <<'PY'
+          import socket
+          s=socket.create_connection(('127.0.0.1',16379),timeout=5)
+          s.sendall(b'*1\r\n$4\r\nPING\r\n')
+          data=s.recv(64)
+          s.close()
+          print(data)
+          assert b'PONG' in data
+          open('q01/service.txt','w').write('SERVICE_CONTAINER_LOOPBACK=PASS\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q01-service-container
+          path: q01/
+
+  handoff-producer:
+    runs-on: ubuntu-24.04
+    outputs:
+      digest: ${{ steps.make.outputs.digest }}
+    steps:
+      - id: make
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p q01
+          printf 'control-plane-q01\n' > q01/handoff.txt
+          digest=$(sha256sum q01/handoff.txt | awk '{print $1}')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "q01-cache-$digest" > q01/cache-key.txt
+          echo '### Q0.1 producer PASS' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/cache/save@v4
+        with:
+          path: q01/handoff.txt
+          key: q01-${{ steps.make.outputs.digest }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q01-handoff
+          path: q01/handoff.txt
+
+  handoff-consumer:
+    needs: handoff-producer
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: q01-handoff
+          path: q01-artifact
+      - uses: actions/cache/restore@v4
+        with:
+          path: q01-cache
+          key: q01-${{ needs.handoff-producer.outputs.digest }}
+      - name: Verify cross-job handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f q01-artifact/handoff.txt
+          got=$(sha256sum q01-artifact/handoff.txt | awk '{print $1}')
+          test "$got" = "${{ needs.handoff-producer.outputs.digest }}"
+          echo 'ARTIFACT_OUTPUT_HANDOFF=PASS'
