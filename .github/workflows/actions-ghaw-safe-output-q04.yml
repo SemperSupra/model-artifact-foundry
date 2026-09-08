@@ -23,9 +23,9 @@ jobs:
         run: |
           set -euo pipefail
           gh aw validate .github/workflows/q04-safe-output.md
-          echo '--- generated candidates ---'
-          find .github/workflows -maxdepth 1 -type f -name '*q04*' -print -exec sed -n '1,260p' {} \;
+          echo '--- generated .github/aw files ---'
+          find .github/aw -maxdepth 4 -type f -print -exec sh -c 'echo "===== $1 ====="; sed -n "1,320p" "$1"' _ {} \; || true
           echo '--- git status ---'
           git status --short
-          echo '--- authority markers ---'
-          grep -RniE 'safe[_-]?output|issues:|permissions:|create.issue|create-issue' .github/workflows/*q04* || true
+          echo '--- authority markers across generated artifacts ---'
+          grep -RniE 'safe[_-]?output|issues:|permissions:|create.issue|create-issue|write' .github/aw .github/workflows/q04-safe-output.md || true
