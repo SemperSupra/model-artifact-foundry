@@ -1,0 +1,180 @@
+name: Actions Environment Qualification Q0 - Linux
+
+on:
+  push:
+    branches:
+      - exp/actions-env-qualification-q0-linux
+
+permissions:
+  contents: read
+
+jobs:
+  host-environment:
+    name: host-${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-slim
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - ubuntu-26.04
+          - ubuntu-22.04-arm
+          - ubuntu-24.04-arm
+          - ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Probe host environment
+        shell: bash
+        run: |
+          set +e
+          out="$RUNNER_TEMP/actions-env-${{ matrix.runner }}.txt"
+          {
+            echo 'schema=actions-env-q0-v1'
+            echo 'probe_kind=host'
+            echo 'requested_runner=${{ matrix.runner }}'
+            echo "runner_os=${RUNNER_OS:-}"
+            echo "runner_arch=${RUNNER_ARCH:-}"
+            echo "runner_name=${RUNNER_NAME:-}"
+            echo "image_os=${ImageOS:-}"
+            echo "image_version=${ImageVersion:-}"
+            echo "workspace=${GITHUB_WORKSPACE:-}"
+            echo "runner_temp=${RUNNER_TEMP:-}"
+            echo "runner_tool_cache=${RUNNER_TOOL_CACHE:-}"
+            echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo '--- os ---'
+            uname -a || true
+            cat /etc/os-release 2>/dev/null || true
+            echo '--- identity/privilege ---'
+            id || true
+            command -v sudo || true
+            sudo -n true >/dev/null 2>&1; echo "sudo_passwordless=$?"
+            echo '--- cpu/virtualization ---'
+            getconf _NPROCESSORS_ONLN 2>/dev/null || true
+            lscpu 2>/dev/null || true
+            systemd-detect-virt 2>/dev/null || true
+            if [ -e /dev/kvm ]; then ls -l /dev/kvm; else echo 'dev_kvm=absent'; fi
+            grep -m1 -E '^(flags|Features)' /proc/cpuinfo 2>/dev/null || true
+            echo '--- memory/storage ---'
+            free -h 2>/dev/null || true
+            df -h || true
+            echo '--- init/cgroup ---'
+            ps -p 1 -o pid,comm,args 2>/dev/null || true
+            cat /proc/1/cgroup 2>/dev/null || true
+            mount | head -80 || true
+            echo '--- package/admin surfaces ---'
+            apt-get --version 2>/dev/null | head -2 || true
+            dpkg --version 2>/dev/null | head -2 || true
+            echo '--- container surfaces ---'
+            for t in docker podman buildah nerdctl ctr; do
+              echo "[$t]"
+              command -v "$t" || true
+              "$t" --version 2>/dev/null || true
+            done
+            docker info 2>/dev/null | sed -n '1,80p' || true
+            echo '--- language/tool surfaces ---'
+            for t in bash sh pwsh powershell python python3 node npm git gh java javac dotnet go rustc cargo gcc g++ clang cmake ninja make perl ruby; do
+              printf '%s=' "$t"
+              command -v "$t" 2>/dev/null || true
+              "$t" --version 2>/dev/null | head -2 || true
+            done
+            echo '--- network ---'
+            getent hosts github.com 2>/dev/null | head -4 || true
+            if command -v curl >/dev/null 2>&1; then
+              printf 'github_api_http='
+              curl -L -sS -o /dev/null -w '%{http_code}\n' https://api.github.com/ || true
+            fi
+            echo '--- environment variable names only ---'
+            env | sed 's/=.*//' | LC_ALL=C sort
+          } >"$out" 2>&1
+          cat "$out"
+      - name: Upload probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actions-env-${{ matrix.runner }}
+          path: ${{ runner.temp }}/actions-env-${{ matrix.runner }}.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+  job-container:
+    name: linux-job-container
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Probe job container
+        shell: sh
+        run: |
+          set +e
+          out="$RUNNER_TEMP/actions-env-job-container.txt"
+          {
+            echo 'schema=actions-env-q0-v1'
+            echo 'probe_kind=job-container'
+            echo 'host_runner=ubuntu-24.04'
+            echo "runner_os=${RUNNER_OS:-}"
+            echo "runner_arch=${RUNNER_ARCH:-}"
+            echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
+            uname -a || true
+            cat /etc/os-release 2>/dev/null || true
+            id || true
+            ps -p 1 -o pid,comm,args 2>/dev/null || true
+            cat /proc/1/cgroup 2>/dev/null || true
+            df -h || true
+            mount | head -80 || true
+            for t in sh bash sudo apt-get docker python python3 node git curl; do
+              printf '%s=' "$t"
+              command -v "$t" 2>/dev/null || true
+              "$t" --version 2>/dev/null | head -2 || true
+            done
+            if [ -e /dev/kvm ]; then ls -l /dev/kvm; else echo 'dev_kvm=absent'; fi
+            echo '--- environment variable names only ---'
+            env | sed 's/=.*//' | sort
+          } >"$out" 2>&1
+          cat "$out"
+      - name: Upload container report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actions-env-job-container
+          path: ${{ runner.temp }}/actions-env-job-container.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+  service-container:
+    name: linux-service-container
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Probe service-container primitive
+        shell: bash
+        run: |
+          set +e
+          out="$RUNNER_TEMP/actions-env-service-container.txt"
+          {
+            echo 'schema=actions-env-q0-v1'
+            echo 'probe_kind=service-container'
+            echo 'host_runner=ubuntu-24.04'
+            echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            docker --version || true
+            docker ps --no-trunc || true
+            getent hosts redis || true
+            (echo > /dev/tcp/127.0.0.1/6379) >/dev/null 2>&1; echo "localhost_6379_connect=$?"
+            docker network ls || true
+          } >"$out" 2>&1
+          cat "$out"
+      - name: Upload service report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actions-env-service-container
+          path: ${{ runner.temp }}/actions-env-service-container.txt
+          if-no-files-found: warn
+          retention-days: 7
