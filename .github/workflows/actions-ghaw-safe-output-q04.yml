@@ -1,4 +1,4 @@
-name: Actions gh-aw safe-output compiler Q0.4
+name: Actions gh-aw safe-output compiler Q0.5
 on:
   push:
     branches:
@@ -17,15 +17,16 @@ jobs:
           set -euo pipefail
           gh extension install github/gh-aw
           gh aw version
-      - name: Validate and inspect safe-output compilation
+      - name: Compile and inspect persisted authority graph
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh aw validate .github/workflows/q04-safe-output.md
-          echo '--- generated .github/aw files ---'
-          find .github/aw -maxdepth 4 -type f -print -exec sh -c 'echo "===== $1 ====="; sed -n "1,320p" "$1"' _ {} \; || true
+          gh aw compile q04-safe-output
+          test -f .github/workflows/q04-safe-output.lock.yml
+          echo '--- compiled lock workflow ---'
+          sed -n '1,520p' .github/workflows/q04-safe-output.lock.yml
+          echo '--- authority markers ---'
+          grep -nEi 'permissions:|issues:|safe[_-]?output|create.issue|create-issue|write|agent' .github/workflows/q04-safe-output.lock.yml || true
           echo '--- git status ---'
           git status --short
-          echo '--- authority markers across generated artifacts ---'
-          grep -RniE 'safe[_-]?output|issues:|permissions:|create.issue|create-issue|write' .github/aw .github/workflows/q04-safe-output.md || true
