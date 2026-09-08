@@ -43,19 +43,18 @@ jobs:
           gh aw compile .github/workflows/q02-agentic.md >q02/compile.txt 2>&1
           echo "compile_exit=$?" | tee q02/status.txt
 
-          gh aw doctor --repo "${GITHUB_REPOSITORY}" >q02/doctor.txt 2>&1
+          gh aw doctor --repo "${GITHUB_REPOSITORY}" --dir "${GITHUB_WORKSPACE}" --json >q02/doctor.json 2>q02/doctor.err
           echo "doctor_exit=$?" | tee -a q02/status.txt
 
-          gh aw forecast --help >q02/forecast-help.txt 2>&1
-          echo "forecast_help_exit=$?" | tee -a q02/status.txt
-          gh aw forecast .github/workflows/q02-agentic.md >q02/forecast.txt 2>&1
+          gh aw forecast q02-agentic --repo "${GITHUB_REPOSITORY}" --days 7 --sample 1 --json >q02/forecast.json 2>q02/forecast.err
           echo "forecast_exit=$?" | tee -a q02/status.txt
 
           gh aw models >q02/models.txt 2>&1
           echo "models_exit=$?" | tee -a q02/status.txt
 
-          printf '\n--- doctor ---\n'; sed -n '1,180p' q02/doctor.txt
-          printf '\n--- forecast ---\n'; sed -n '1,180p' q02/forecast.txt
+          printf '\n--- doctor ---\n'; sed -n '1,220p' q02/doctor.json; sed -n '1,120p' q02/doctor.err
+          printf '\n--- forecast ---\n'; sed -n '1,220p' q02/forecast.json; sed -n '1,120p' q02/forecast.err
+          printf '\n--- models ---\n'; sed -n '1,100p' q02/models.txt
           printf '\n--- status ---\n'; cat q02/status.txt
           exit 0
 
