@@ -1,0 +1,31 @@
+name: Actions gh-aw safe-output compiler Q0.4
+on:
+  push:
+    branches:
+      - exp/actions-ghaw-safe-output-q04-20260908
+permissions:
+  contents: read
+jobs:
+  compile-safe-output:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gh-aw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh extension install github/gh-aw
+          gh aw version
+      - name: Validate and inspect safe-output compilation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh aw validate .github/workflows/q04-safe-output.md
+          echo '--- generated candidates ---'
+          find .github/workflows -maxdepth 1 -type f -name '*q04*' -print -exec sed -n '1,260p' {} \;
+          echo '--- git status ---'
+          git status --short
+          echo '--- authority markers ---'
+          grep -RniE 'safe[_-]?output|issues:|permissions:|create.issue|create-issue' .github/workflows/*q04* || true
