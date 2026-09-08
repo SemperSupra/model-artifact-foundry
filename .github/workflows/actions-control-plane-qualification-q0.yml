@@ -42,12 +42,7 @@ jobs:
             echo "oidc_request_token_present=$([[ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]] && echo yes || echo no)"
             printf 'token_repo_read_http='
             curl -sS -o "$RUNNER_TEMP/repo.json" -w '%{http_code}\n' -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$GITHUB_REPOSITORY"
-            python3 - <<'PY'
-          import json, os
-          d=json.load(open(os.path.join(os.environ['RUNNER_TEMP'],'repo.json')))
-          print('token_repo_identity='+d.get('full_name','UNKNOWN'))
-          print('token_repo_private='+str(d.get('private','UNKNOWN')).lower())
-          PY
+            python3 -c "import json,os; d=json.load(open(os.path.join(os.environ['RUNNER_TEMP'],'repo.json'))); print('token_repo_identity='+d.get('full_name','UNKNOWN')); print('token_repo_private='+str(d.get('private','UNKNOWN')).lower())"
           } | tee "$RUNNER_TEMP/control-plane-producer.txt"
       - name: Exercise environment and PATH propagation
         shell: bash
