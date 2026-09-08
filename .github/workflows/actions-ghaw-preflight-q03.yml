@@ -1,0 +1,51 @@
+name: Actions gh-aw committed preflight Q0.3
+
+on:
+  push:
+    branches:
+      - exp/actions-ghaw-preflight-q03-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  preflight-only:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gh-aw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh extension install github/gh-aw
+          gh aw version
+
+      - name: Clean committed-fixture preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          mkdir -p "$RUNNER_TEMP/q03"
+          git status --porcelain | tee "$RUNNER_TEMP/q03/status-before.txt"
+
+          gh aw doctor --repo "${GITHUB_REPOSITORY}" --dir "${GITHUB_WORKSPACE}" --json >"$RUNNER_TEMP/q03/doctor.json" 2>"$RUNNER_TEMP/q03/doctor.err"
+          echo "doctor_exit=$?" | tee "$RUNNER_TEMP/q03/status.txt"
+
+          gh aw forecast q03-agentic --repo "${GITHUB_REPOSITORY}" --days 7 --sample 1 --json >"$RUNNER_TEMP/q03/forecast.json" 2>"$RUNNER_TEMP/q03/forecast.err"
+          echo "forecast_exit=$?" | tee -a "$RUNNER_TEMP/q03/status.txt"
+
+          gh aw validate .github/workflows/q03-agentic.md >"$RUNNER_TEMP/q03/validate.txt" 2>&1
+          echo "validate_exit=$?" | tee -a "$RUNNER_TEMP/q03/status.txt"
+
+          printf '\n--- doctor ---\n'; cat "$RUNNER_TEMP/q03/doctor.json"; cat "$RUNNER_TEMP/q03/doctor.err"
+          printf '\n--- forecast ---\n'; cat "$RUNNER_TEMP/q03/forecast.json"; cat "$RUNNER_TEMP/q03/forecast.err"
+          printf '\n--- validate ---\n'; cat "$RUNNER_TEMP/q03/validate.txt"
+          printf '\n--- status ---\n'; cat "$RUNNER_TEMP/q03/status.txt"
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ghaw-preflight-q03
+          path: ${{ runner.temp }}/q03/
