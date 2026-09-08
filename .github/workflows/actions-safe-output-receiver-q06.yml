@@ -1,0 +1,142 @@
+name: Actions safe-output deterministic receiver Q0.6
+
+on:
+  push:
+    branches:
+      - exp/actions-safe-output-receiver-q06-20260908
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  receiver:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Exercise machine-safe receiver contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import sys
+
+          REQUIRED = {"action", "resource", "expected", "patch", "projection_id"}
+          ALLOWED = {"restart_worker", "drain_backlog", "no_action"}
+
+          projections = [
+              {
+                  "projection_id": "dead-2",
+                  "resource": "resource:alpha",
+                  "worker": "dead",
+                  "backlog": 2,
+                  "allowed_actions": sorted(ALLOWED),
+              },
+              {
+                  "projection_id": "alive-2",
+                  "resource": "resource:alpha",
+                  "worker": "alive",
+                  "backlog": 2,
+                  "allowed_actions": sorted(ALLOWED),
+              },
+              {
+                  "projection_id": "alive-0",
+                  "resource": "resource:alpha",
+                  "worker": "alive",
+                  "backlog": 0,
+                  "allowed_actions": sorted(ALLOWED),
+              },
+          ]
+
+          def policy(p):
+              if p["worker"] == "dead":
+                  return "restart_worker", {"worker": "alive"}
+              if p["worker"] == "alive" and p["backlog"] > 0:
+                  return "drain_backlog", {"backlog": 0}
+              return "no_action", {}
+
+          def valid_request(p):
+              action, patch = policy(p)
+              return {
+                  "action": action,
+                  "resource": p["resource"],
+                  "expected": {"worker": p["worker"], "backlog": p["backlog"]},
+                  "patch": patch,
+                  "projection_id": p["projection_id"],
+              }
+
+          def validate(raw, p):
+              try:
+                  obj = json.loads(raw)
+              except json.JSONDecodeError:
+                  return False, "invalid_json"
+              if not isinstance(obj, dict):
+                  return False, "not_object"
+              if set(obj) != REQUIRED:
+                  return False, "schema_keys"
+              if obj["projection_id"] != p["projection_id"]:
+                  return False, "projection_id"
+              if obj["resource"] != p["resource"]:
+                  return False, "resource"
+              if obj["action"] not in p["allowed_actions"]:
+                  return False, "action_not_allowed"
+              expected_state = {"worker": p["worker"], "backlog": p["backlog"]}
+              if obj["expected"] != expected_state:
+                  return False, "precondition_mismatch"
+              expected_action, expected_patch = policy(p)
+              if obj["action"] != expected_action:
+                  return False, "policy_mismatch"
+              if obj["patch"] != expected_patch:
+                  return False, "patch_mismatch"
+              return True, "accepted"
+
+          failures = []
+          receipts = []
+
+          for p in projections:
+              good = valid_request(p)
+              fixtures = {
+                  "valid": (json.dumps(good, separators=(",", ":")), True),
+                  "malformed": ("{not-json", False),
+                  "extra_key": (json.dumps({**good, "ready": True}), False),
+                  "wrong_projection": (json.dumps({**good, "projection_id": "stale"}), False),
+                  "wrong_resource": (json.dumps({**good, "resource": "resource:other"}), False),
+                  "wrong_precondition": (json.dumps({**good, "expected": {"worker": "alive", "backlog": 99}}), False),
+                  "forbidden_action": (json.dumps({**good, "action": "arbitrary_shell"}), False),
+                  "wrong_policy_action": (json.dumps({**good, "action": next(a for a in sorted(ALLOWED) if a != good["action"])}), False),
+                  "wrong_patch": (json.dumps({**good, "patch": {"unexpected": True}}), False),
+              }
+
+              for name, (raw, expected_accept) in fixtures.items():
+                  accepted, reason = validate(raw, p)
+                  receipts.append({
+                      "projection_id": p["projection_id"],
+                      "fixture": name,
+                      "accepted": accepted,
+                      "reason": reason,
+                  })
+                  if accepted != expected_accept:
+                      failures.append((p["projection_id"], name, expected_accept, accepted, reason))
+
+          for receipt in receipts:
+              print(json.dumps(receipt, sort_keys=True))
+
+          if failures:
+              print("receiver qualification failures:", failures, file=sys.stderr)
+              sys.exit(1)
+
+          print(json.dumps({
+              "result": "PASS",
+              "projections": len(projections),
+              "fixtures_per_projection": 9,
+              "accepted": 3,
+              "rejected": 24,
+              "readiness_source": "schema+provenance+precondition+policy+patch",
+              "natural_language_marker_required": False,
+          }, sort_keys=True))
+          PY
