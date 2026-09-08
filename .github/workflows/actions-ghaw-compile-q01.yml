@@ -1,0 +1,57 @@
+name: Actions gh-aw compiler qualification Q0.1
+
+on:
+  push:
+    branches:
+      - exp/actions-ghaw-compile-q01-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  compile-only:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gh-aw extension
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh --version
+          gh extension install github/gh-aw
+          gh aw --help | head -80
+
+      - name: Compile minimal agentic workflow without executing an AI engine
+        run: |
+          set -euo pipefail
+          mkdir -p q01 .github/workflows
+          cat > .github/workflows/q01-agentic.md <<'EOF'
+          ---
+          on:
+            workflow_dispatch:
+          permissions:
+            contents: read
+          engine: copilot
+          ---
+
+          Inspect the repository read-only and produce a short repository-state report. Do not request or perform external writes.
+          EOF
+
+          gh aw compile .github/workflows/q01-agentic.md 2>&1 | tee q01/compile.log
+          find .github/workflows -maxdepth 1 -type f -name 'q01-agentic*' -print | sort | tee q01/generated-files.txt
+          lock=$(find .github/workflows -maxdepth 1 -type f -name 'q01-agentic*.lock.yml' -o -name 'q01-agentic.lock.yml' | head -1)
+          if [ -z "$lock" ]; then
+            echo 'GHAW_COMPILE=FAIL_NO_LOCK' | tee q01/result.txt
+            exit 1
+          fi
+          cp "$lock" q01/generated.lock.yml
+          echo 'GHAW_COMPILE=PASS' | tee q01/result.txt
+          echo "LOCK_FILE=$lock" | tee -a q01/result.txt
+          grep -nE 'permissions:|contents:|engine|safe|sandbox|network|runs-on' "$lock" | head -120 | tee q01/lock-signals.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ghaw-compile-q01
+          path: q01/
