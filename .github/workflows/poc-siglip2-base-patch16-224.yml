@@ -113,7 +113,7 @@ jobs:
           rm -rf pullback
           mkdir pullback
           oras pull "${OCI_REPOSITORY}@${{ steps.publish.outputs.digest }}" --output pullback
-          python3 tools/harvest_siglip2.py verify-pulled --bundle-dir pullback
+          python3 tools/harvest_siglip2.py verify-pulled --bundle-dir pullback/dist
 
       - name: Create and validate candidate evidence
         shell: bash
