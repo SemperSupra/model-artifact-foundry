@@ -1,0 +1,17 @@
+{
+  "approved_catalog_promoted": false,
+  "generic_hydrator_first_pass": true,
+  "generic_hydrator_second_idempotent_pass": true,
+  "hydrated_model_dir_runtime_only": "/tmp/foundry-siglip2-hydrate/blobs/sha256-c93e953d44105c8cd59be4b893acee43858e9fcb8b4deb20f83535a2165c1c3d/model",
+  "logical_id": "embed/siglip2/base-patch16-224",
+  "oci_digest": "sha256:c93e953d44105c8cd59be4b893acee43858e9fcb8b4deb20f83535a2165c1c3d",
+  "oci_ref": "ghcr.io/sempersupra/model-artifact-foundry:candidate-embed-siglip2-base-patch16-224-75de2d55ec2d",
+  "oci_repository": "ghcr.io/sempersupra/model-artifact-foundry",
+  "offline_model_smoke_after_hydration": true,
+  "pullback_verified": true,
+  "schema_version": 1,
+  "temporary_catalog_persisted": false,
+  "terminal_state": "PASS_CANDIDATE_PUBLISHED",
+  "tool_revision": "7304a77647a551f6345853b34faebbe0931d7c29",
+  "upstream_exact_revision": "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"
+}
