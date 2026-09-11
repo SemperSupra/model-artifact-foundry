@@ -1,0 +1,228 @@
+name: SigLIP2 candidate OCI and hydration proof
+
+on:
+  push:
+    branches:
+      - retry/siglip2-oci-hydration-2026-09-10
+    paths:
+      - ".github/workflows/poc-siglip2-base-patch16-224.yml"
+      - "sources/siglip2-base-patch16-224.json"
+      - "schemas/**"
+      - "tools/validate_siglip2.py"
+      - "tools/harvest_siglip2.py"
+      - "tools/hydrate.py"
+      - "poc/siglip2-base-patch16-224.publish"
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  PYTHONUNBUFFERED: "1"
+  OCI_REPOSITORY: ghcr.io/sempersupra/model-artifact-foundry
+  LOGICAL_ID: embed/siglip2/base-patch16-224
+  UPSTREAM_REVISION: 75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2
+
+jobs:
+  publish-pullback-hydrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact retry branch
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Verify bounded source/base state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat poc/siglip2-base-patch16-224.publish)" = "${UPSTREAM_REVISION}"
+          git merge-base --is-ancestor 6bb32dcbb82b40b9720f018857a50f9c321f97e9 HEAD
+          python3 -m py_compile tools/validate_siglip2.py tools/harvest_siglip2.py tools/hydrate.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          pairs = [
+              ("schemas/source-declaration.schema.json", "sources/siglip2-base-patch16-224.json"),
+          ]
+          for schema_path, doc_path in pairs:
+              schema = json.loads(Path(schema_path).read_text())
+              jsonschema.Draft202012Validator.check_schema(schema)
+              jsonschema.validate(json.loads(Path(doc_path).read_text()), schema)
+          PY
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      - name: Install pinned validation stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input \
+            "jsonschema==4.25.1" \
+            "pillow==12.3.0" \
+            "transformers==5.16.1" \
+            "torch==2.14.0"
+
+      - name: Reacquire exact revision and build deterministic bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/harvest_siglip2.py prepare \
+            --dist-dir dist \
+            --cache-dir /tmp/siglip2-source-cache
+
+      - name: Login to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io \
+            --username "${GITHUB_ACTOR}" \
+            --password-stdin
+
+      - name: Publish candidate OCI
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT_REV="${UPSTREAM_REVISION:0:12}"
+          TAG="candidate-embed-siglip2-base-patch16-224-${SHORT_REV}"
+          REF="${OCI_REPOSITORY}:${TAG}"
+          oras push "${REF}" \
+            --artifact-type application/vnd.sempersupra.model-artifact.v1 \
+            --annotation "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --annotation "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --annotation "org.opencontainers.image.title=${LOGICAL_ID}" \
+            dist/model.tar.gz:application/vnd.sempersupra.model.tar+gzip \
+            dist/bundle-manifest.json:application/vnd.sempersupra.model.manifest.v1+json \
+            dist/NOTICE.txt:text/plain
+          DIGEST="$(oras resolve "${REF}")"
+          [[ "${DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${REF}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pull back by immutable digest and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf pullback
+          mkdir pullback
+          oras pull "${OCI_REPOSITORY}@${{ steps.publish.outputs.digest }}" --output pullback
+          python3 tools/harvest_siglip2.py verify-pulled --bundle-dir pullback/dist
+
+      - name: Create and validate candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          python3 tools/harvest_siglip2.py candidate-manifest \
+            --dist-dir dist \
+            --oci-repository "${OCI_REPOSITORY}" \
+            --digest "${{ steps.publish.outputs.digest }}" \
+            --tool-revision "${GITHUB_SHA}" \
+            --output evidence/candidate.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/candidate-manifest.schema.json").read_text())
+          doc = json.loads(Path("evidence/candidate.json").read_text())
+          jsonschema.validate(doc, schema)
+          PY
+
+      - name: Exercise generic hydrator twice without promotion
+        id: hydrate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/harvest_siglip2.py temporary-catalog \
+            --candidate evidence/candidate.json \
+            --output /tmp/siglip2-test-catalog.json
+          rm -rf /tmp/foundry-siglip2-hydrate
+          MODEL1="$(python3 tools/hydrate.py \
+            --catalog /tmp/siglip2-test-catalog.json \
+            --id "${LOGICAL_ID}" \
+            --cache-root /tmp/foundry-siglip2-hydrate \
+            --oras oras | tail -n1)"
+          python3 tools/harvest_siglip2.py smoke-model --model-dir "${MODEL1}"
+          MODEL2="$(python3 tools/hydrate.py \
+            --catalog /tmp/siglip2-test-catalog.json \
+            --id "${LOGICAL_ID}" \
+            --cache-root /tmp/foundry-siglip2-hydrate \
+            --oras oras | tail -n1)"
+          test "${MODEL1}" = "${MODEL2}"
+          python3 tools/harvest_siglip2.py smoke-model --model-dir "${MODEL2}"
+          echo "model_dir=${MODEL2}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record bounded hydration receipt
+        shell: bash
+        env:
+          OCI_DIGEST: ${{ steps.publish.outputs.digest }}
+          OCI_REF: ${{ steps.publish.outputs.ref }}
+          HYDRATED_MODEL_DIR: ${{ steps.hydrate.outputs.model_dir }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          receipt = {
+              "schema_version": 1,
+              "terminal_state": "PASS_CANDIDATE_PUBLISHED",
+              "logical_id": os.environ["LOGICAL_ID"],
+              "upstream_exact_revision": os.environ["UPSTREAM_REVISION"],
+              "oci_repository": os.environ["OCI_REPOSITORY"],
+              "oci_ref": os.environ["OCI_REF"],
+              "oci_digest": os.environ["OCI_DIGEST"],
+              "tool_revision": os.environ["GITHUB_SHA"],
+              "pullback_verified": True,
+              "generic_hydrator_first_pass": True,
+              "generic_hydrator_second_idempotent_pass": True,
+              "offline_model_smoke_after_hydration": True,
+              "approved_catalog_promoted": False,
+              "temporary_catalog_persisted": False,
+              "hydrated_model_dir_runtime_only": os.environ["HYDRATED_MODEL_DIR"],
+          }
+          Path("evidence/hydration-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+          PY
+
+      - name: Persist immutable candidate evidence on evidence branch
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_DIR="candidates/embed-siglip2-base-patch16-224/${UPSTREAM_REVISION}/${GITHUB_SHA}"
+          BRANCH="evidence/siglip2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${EVIDENCE_DIR}"
+          cp evidence/candidate.json "${EVIDENCE_DIR}/candidate.json"
+          cp evidence/hydration-receipt.json "${EVIDENCE_DIR}/hydration-receipt.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
+          git add "${EVIDENCE_DIR}"
+          git commit -m "evidence: record SigLIP2 candidate OCI hydration proof"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "path=${EVIDENCE_DIR}" >> "${GITHUB_OUTPUT}"
+
+      - name: Proof summary
+        shell: bash
+        run: |
+          {
+            echo "## SigLIP2 candidate OCI/hydration proof"
+            echo
+            echo "- logical id: \`${LOGICAL_ID}\`"
+            echo "- upstream revision: \`${UPSTREAM_REVISION}\`"
+            echo "- OCI digest: \`${{ steps.publish.outputs.digest }}\`"
+            echo "- evidence branch: \`${{ steps.evidence.outputs.branch }}\`"
+            echo "- evidence commit: \`${{ steps.evidence.outputs.sha }}\`"
+            echo "- evidence path: \`${{ steps.evidence.outputs.path }}\`"
+            echo "- approved catalog promoted: \`false\`"
+            echo
+            echo "Candidate publication/hydration evidence is not approval or downstream acceptance."
+          } >> "${GITHUB_STEP_SUMMARY}"
