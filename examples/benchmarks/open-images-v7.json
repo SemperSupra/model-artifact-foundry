@@ -3,9 +3,6 @@
   "logical_id": "benchmark/open-images-v7",
   "artifact_kind": "benchmark",
   "materialization_mode": "composite",
-  "croissant": {
-    "locator": "https://storage.googleapis.com/openimages/web/download_v7.html"
-  },
   "components": [
     {
       "name": "annotations",
