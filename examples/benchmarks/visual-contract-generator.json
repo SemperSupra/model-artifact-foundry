@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "logical_id": "benchmark/visual-concept-contract-generator",
+  "artifact_kind": "synthetic-generator",
+  "materialization_mode": "manifest-only",
+  "components": [
+    {
+      "name": "generator",
+      "role": "generator",
+      "distribution": "manifest-only",
+      "source": {
+        "provider": "project",
+        "locator": "SemperSupra/model-artifact-foundry:examples/benchmarks/visual-contract-generator.json",
+        "exact_revision": "exp/benchmark-artifact-rep1"
+      },
+      "license": {
+        "status": "verified",
+        "spdx_id": "MIT",
+        "redistribution_permitted": true,
+        "evidence": ["project-owned synthetic benchmark declaration used for contract qualification"]
+      },
+      "sample_identity": {
+        "split_field": "suite",
+        "sample_id_field": "fixture_id",
+        "source_hash_field": "rendered_sha256"
+      }
+    }
+  ],
+  "validator_profile": "visual-contract-generator-v0",
+  "promotion_policy": {"mode": "review-required"}
+}
