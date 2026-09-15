@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "logical_id": "llm/smollm2/135m-instruct",
+  "source": {
+    "provider": "huggingface",
+    "repository": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "discovery_ref": "12fd25f77366fa6b3b4b768ec3050bf629380bac"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "Apache-2.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "llm/smollm2",
+    "format": "safetensors-transformers",
+    "expected_file_patterns": [
+      "config.json",
+      "generation_config.json",
+      "merges.txt",
+      "model.safetensors",
+      "special_tokens_map.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "vocab.json"
+    ],
+    "max_unpacked_bytes": 350000000
+  },
+  "validator_profile": "smollm2-causal-lm-local-smoke-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct",
+    "Observed source license metadata: Apache-2.0",
+    "training_args.bin is deliberately excluded from the inference artifact allowlist."
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
