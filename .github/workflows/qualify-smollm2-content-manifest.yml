@@ -44,14 +44,16 @@ jobs:
           assert "training_args.bin" not in decl["artifact"]["expected_file_patterns"]
           PY
 
-      - name: Install pinned validation stack
+      - name: Install pinned CPU validation stack
         shell: bash
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check --no-input \
-            "jsonschema==4.25.1" \
-            "transformers==5.16.1" \
+            --index-url https://download.pytorch.org/whl/cpu \
             "torch==2.14.0"
+          python3 -m pip install --disable-pip-version-check --no-input \
+            "jsonschema==4.25.1" \
+            "transformers==5.16.1"
 
       - name: Reacquire exact inference files and qualify
         shell: bash
