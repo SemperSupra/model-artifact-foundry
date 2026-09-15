@@ -1,0 +1,115 @@
+name: Qualify SmolLM2 content-manifest candidate
+
+on:
+  push:
+    branches:
+      - consumer/smollm2-model-spelunker
+    paths:
+      - ".github/workflows/qualify-smollm2-content-manifest.yml"
+      - "sources/smollm2-135m-instruct.json"
+      - "schemas/source-declaration.schema.json"
+      - "tools/validate_smollm2.py"
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_REVISION: 12fd25f77366fa6b3b4b768ec3050bf629380bac
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact candidate branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify bounded source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tools/validate_smollm2.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          decl = json.loads(Path("sources/smollm2-135m-instruct.json").read_text())
+          jsonschema.Draft202012Validator.check_schema(schema)
+          jsonschema.validate(decl, schema)
+          assert decl["source"]["discovery_ref"] == "12fd25f77366fa6b3b4b768ec3050bf629380bac"
+          assert "training_args.bin" not in decl["artifact"]["expected_file_patterns"]
+          PY
+
+      - name: Install pinned validation stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input \
+            "jsonschema==4.25.1" \
+            "transformers==5.16.1" \
+            "torch==2.14.0"
+
+      - name: Reacquire exact inference files and qualify
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/foundry-smollm2
+          mkdir -p /tmp/evidence
+          python3 tools/validate_smollm2.py \
+            --cache-dir /tmp/foundry-smollm2 \
+            --output /tmp/evidence/candidate-1.json
+
+      - name: Prove content-manifest determinism from identical bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/validate_smollm2.py \
+            --cache-dir /tmp/foundry-smollm2 \
+            --output /tmp/evidence/candidate-2.json
+          cmp /tmp/evidence/candidate-1.json /tmp/evidence/candidate-2.json
+
+      - name: Persist candidate evidence on a separate evidence branch
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_DIR="candidates/llm-smollm2-135m-instruct/${UPSTREAM_REVISION}/${GITHUB_SHA}"
+          EVIDENCE_BRANCH="evidence/smollm2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${EVIDENCE_DIR}"
+          cp /tmp/evidence/candidate-1.json "${EVIDENCE_DIR}/content-manifest-candidate.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${EVIDENCE_BRANCH}"
+          git add "${EVIDENCE_DIR}"
+          git commit -m "evidence: record SmolLM2 content-manifest candidate"
+          git push origin "HEAD:refs/heads/${EVIDENCE_BRANCH}"
+          echo "branch=${EVIDENCE_BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "path=${EVIDENCE_DIR}/content-manifest-candidate.json" >> "${GITHUB_OUTPUT}"
+
+      - name: Qualification summary
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          c = json.loads(Path("/tmp/evidence/candidate-1.json").read_text())
+          print("## SmolLM2 Foundry candidate")
+          print()
+          print(f"- logical id: `{c['logical_id']}`")
+          print(f"- upstream revision: `{c['upstream']['exact_revision']}`")
+          print(f"- identity kind: `{c['artifact_identity']['kind']}`")
+          print(f"- content-manifest digest: `{c['artifact_identity']['digest']}`")
+          print("- approved catalog modified: `false`")
+          print("- OCI published: `false`")
+          print("- Model Spelunker acceptance: not implied")
+          PY
+          {
+            echo "- evidence branch: \`${{ steps.evidence.outputs.branch }}\`"
+            echo "- evidence commit: \`${{ steps.evidence.outputs.sha }}\`"
+            echo "- evidence path: \`${{ steps.evidence.outputs.path }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
