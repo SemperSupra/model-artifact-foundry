@@ -1,0 +1,66 @@
+{
+  "acquired_at": "2026-09-16T00:50:02Z",
+  "compatibility": [
+    {
+      "component": "chronos-forecasting",
+      "constraint": "validated == 2.3.2",
+      "evidence": "chronos-bolt-synthetic-forecast-smoke-v1"
+    },
+    {
+      "component": "torch",
+      "constraint": "validated == 2.14.0+cpu",
+      "evidence": "chronos-bolt-synthetic-forecast-smoke-v1"
+    },
+    {
+      "component": "transformers",
+      "constraint": "validated == 5.16.1",
+      "evidence": "chronos-bolt-synthetic-forecast-smoke-v1"
+    }
+  ],
+  "files": [
+    {
+      "path": "config.json",
+      "sha256": "278f0086733031635fb1c861cb01c1bad6477420c7fcb19381a2993e335785e0",
+      "size_bytes": 1120
+    },
+    {
+      "path": "model.safetensors",
+      "sha256": "75068728d376d2bec670379eeef4bfb4d24c0cfe24d957451f8d19b447030a32",
+      "size_bytes": 34622352
+    }
+  ],
+  "license": {
+    "evidence": [
+      "https://huggingface.co/amazon/chronos-bolt-tiny/tree/a0e552de83495b5c28c14c71c374f3e33280b340",
+      "https://huggingface.co/api/models/amazon/chronos-bolt-tiny"
+    ],
+    "observed_spdx_id": "Apache-2.0",
+    "redistribution_verified": true
+  },
+  "logical_id": "forecast/chronos/bolt-tiny",
+  "oci": {
+    "digest": "sha256:515724650b6cdf6d860ade66faf970b50cc64e1d089db405963162aae908adef",
+    "pullback_verified": true,
+    "repository": "ghcr.io/sempersupra/model-artifact-foundry"
+  },
+  "schema_version": 1,
+  "state": "candidate",
+  "upstream": {
+    "exact_revision": "a0e552de83495b5c28c14c71c374f3e33280b340",
+    "provider": "huggingface",
+    "repository": "amazon/chronos-bolt-tiny"
+  },
+  "validation": {
+    "claims": [
+      "exact declared upstream revision reacquired and allow-listed file hashes recorded",
+      "published safetensors SHA-256 matches the pinned upstream byte identity",
+      "Chronos-Bolt pipeline loads from the explicit local directory with model networking disabled",
+      "three deterministic synthetic numeric contexts produce finite 9-quantile 16-step forecasts",
+      "repeated deterministic inference is stable within 1e-6 max absolute forecast delta",
+      "quantile crossing is observed descriptively rather than used as a qualification gate"
+    ],
+    "profile": "chronos-bolt-synthetic-forecast-smoke-v1",
+    "status": "passed",
+    "tool_revision": "3d14a8cb903deefc3bee0b496ab6151122112866"
+  }
+}

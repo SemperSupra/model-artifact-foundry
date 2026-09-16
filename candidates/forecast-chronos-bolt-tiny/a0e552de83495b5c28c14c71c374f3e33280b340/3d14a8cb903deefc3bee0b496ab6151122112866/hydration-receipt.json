@@ -1,0 +1,15 @@
+{
+  "approved_catalog_promoted": false,
+  "generic_hydrator_first_pass": true,
+  "generic_hydrator_second_offline_pass": true,
+  "logical_id": "forecast/chronos/bolt-tiny",
+  "oci_digest": "sha256:515724650b6cdf6d860ade66faf970b50cc64e1d089db405963162aae908adef",
+  "oci_ref": "ghcr.io/sempersupra/model-artifact-foundry:candidate-forecast-chronos-bolt-tiny-a0e552de8349",
+  "oci_repository": "ghcr.io/sempersupra/model-artifact-foundry",
+  "offline_forecast_smoke_after_hydration": true,
+  "pullback_verified": true,
+  "schema_version": 1,
+  "terminal_state": "PASS_CANDIDATE_PUBLISHED",
+  "tool_revision": "3d14a8cb903deefc3bee0b496ab6151122112866",
+  "upstream_exact_revision": "a0e552de83495b5c28c14c71c374f3e33280b340"
+}
