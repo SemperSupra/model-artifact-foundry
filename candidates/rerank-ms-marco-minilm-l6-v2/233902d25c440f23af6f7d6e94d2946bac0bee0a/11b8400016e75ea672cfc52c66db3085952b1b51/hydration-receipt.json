@@ -1,0 +1,15 @@
+{
+  "approved_catalog_promoted": false,
+  "generic_hydrator_first_pass": true,
+  "generic_hydrator_second_offline_pass": true,
+  "logical_id": "rerank/cross-encoder/ms-marco-minilm-l6-v2",
+  "oci_digest": "sha256:88a3ed0cffeca20e53ee628f574a9202a647f4abde458122ea169292b62a2315",
+  "oci_ref": "ghcr.io/sempersupra/model-artifact-foundry:candidate-rerank-msmarco-minilm-l6-v2-233902d25c44",
+  "oci_repository": "ghcr.io/sempersupra/model-artifact-foundry",
+  "offline_reranker_smoke_after_hydration": true,
+  "pullback_verified": true,
+  "schema_version": 1,
+  "terminal_state": "PASS_CANDIDATE_PUBLISHED",
+  "tool_revision": "11b8400016e75ea672cfc52c66db3085952b1b51",
+  "upstream_exact_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a"
+}
