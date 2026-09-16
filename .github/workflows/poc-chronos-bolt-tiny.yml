@@ -1,0 +1,264 @@
+name: Chronos Bolt Tiny candidate OCI proof
+
+on:
+  push:
+    branches:
+      - candidate/chronos-bolt-tiny-timeseries
+    paths:
+      - ".github/workflows/poc-chronos-bolt-tiny.yml"
+      - "sources/chronos-bolt-tiny.json"
+      - "schemas/**"
+      - "tools/harvest_chronos_bolt_tiny.py"
+      - "tools/hydrate.py"
+      - "poc/chronos-bolt-tiny.publish"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  PYTHONUNBUFFERED: "1"
+  HF_HUB_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+  OCI_REPOSITORY: ghcr.io/sempersupra/model-artifact-foundry
+  LOGICAL_ID: forecast/chronos/bolt-tiny
+  UPSTREAM_REVISION: a0e552de83495b5c28c14c71c374f3e33280b340
+
+jobs:
+  qualify-publish-pullback-hydrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Verify bounded source/base state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat poc/chronos-bolt-tiny.publish)" = "${UPSTREAM_REVISION}"
+          git merge-base --is-ancestor 6622753fd5914be87fb1b6d987ceb7cae46c7ff5 HEAD
+          python3 -m py_compile tools/harvest_chronos_bolt_tiny.py tools/hydrate.py
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+        with:
+          version: 1.3.3
+
+      - name: Derive exact CPU runtime cache key
+        id: runtime-key
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import sys
+          print(f"python_tag={sys.implementation.cache_tag}")
+          PY
+
+      - name: Restore exact Chronos runtime
+        id: runtime-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: .chronos-venv
+          key: foundry-chronos-bolt-tiny-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.runtime-key.outputs.python_tag }}-chronos2.3.2-torch2.14.0-transformers5.16.1
+
+      - name: Build exact CPU runtime on cache miss
+        if: steps.runtime-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .chronos-venv
+          .chronos-venv/bin/python -m pip install --disable-pip-version-check --no-input \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==2.14.0"
+          .chronos-venv/bin/python -m pip install --disable-pip-version-check --no-input \
+            "chronos-forecasting==2.3.2" \
+            "transformers==5.16.1" \
+            "jsonschema==4.25.1"
+
+      - name: Record runtime lock evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          .chronos-venv/bin/python -m pip freeze | sort | tee evidence/runtime-freeze.txt
+
+      - name: Validate exact source declaration
+        shell: bash
+        run: |
+          set -euo pipefail
+          .chronos-venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+          schema = json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          doc = json.loads(Path("sources/chronos-bolt-tiny.json").read_text())
+          jsonschema.validate(doc, schema)
+          assert doc["logical_id"] == "forecast/chronos/bolt-tiny"
+          assert doc["source"]["discovery_ref"] == "a0e552de83495b5c28c14c71c374f3e33280b340"
+          PY
+
+      - name: Reacquire exact revision and build deterministic candidate bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py prepare \
+            --dist-dir dist \
+            --cache-dir /tmp/chronos-bolt-tiny-source
+
+      - name: Login to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io \
+            --username "${GITHUB_ACTOR}" \
+            --password-stdin
+
+      - name: Publish candidate OCI
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT_REV="${UPSTREAM_REVISION:0:12}"
+          TAG="candidate-forecast-chronos-bolt-tiny-${SHORT_REV}"
+          REF="${OCI_REPOSITORY}:${TAG}"
+          oras push "${REF}" \
+            --artifact-type application/vnd.sempersupra.model-artifact.v1 \
+            --annotation "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --annotation "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --annotation "org.opencontainers.image.title=${LOGICAL_ID}" \
+            dist/model.tar.gz:application/vnd.sempersupra.model.tar+gzip \
+            dist/bundle-manifest.json:application/vnd.sempersupra.model.manifest.v1+json \
+            dist/NOTICE.txt:text/plain
+          DIGEST="$(oras resolve "${REF}")"
+          [[ "${DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${REF}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pull back immutable digest and verify bundle plus forecast function
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf pullback
+          mkdir pullback
+          oras pull "${OCI_REPOSITORY}@${{ steps.publish.outputs.digest }}" --output pullback
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py verify-pulled --bundle-dir pullback/dist
+
+      - name: Create candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py candidate-manifest \
+            --dist-dir dist \
+            --oci-repository "${OCI_REPOSITORY}" \
+            --digest "${{ steps.publish.outputs.digest }}" \
+            --tool-revision "${GITHUB_SHA}" \
+            --output evidence/candidate.json
+
+      - name: Exercise generic hydrator twice without catalog promotion
+        id: hydrate
+        shell: bash
+        run: |
+          set -euo pipefail
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py temporary-catalog \
+            --candidate evidence/candidate.json \
+            --output /tmp/chronos-test-catalog.json
+          rm -rf /tmp/foundry-chronos-hydrate
+          MODEL1="$(.chronos-venv/bin/python tools/hydrate.py \
+            --catalog /tmp/chronos-test-catalog.json \
+            --id "${LOGICAL_ID}" \
+            --cache-root /tmp/foundry-chronos-hydrate \
+            --oras "$(command -v oras)" | tail -n1)"
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py smoke-model --model-dir "${MODEL1}"
+          MODEL2="$(.chronos-venv/bin/python tools/hydrate.py \
+            --catalog /tmp/chronos-test-catalog.json \
+            --id "${LOGICAL_ID}" \
+            --cache-root /tmp/foundry-chronos-hydrate \
+            --oras /bin/false | tail -n1)"
+          test "${MODEL1}" = "${MODEL2}"
+          .chronos-venv/bin/python tools/harvest_chronos_bolt_tiny.py smoke-model --model-dir "${MODEL2}"
+          echo "model_dir=${MODEL2}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record bounded candidate receipt
+        shell: bash
+        env:
+          OCI_DIGEST: ${{ steps.publish.outputs.digest }}
+          OCI_REF: ${{ steps.publish.outputs.ref }}
+        run: |
+          set -euo pipefail
+          .chronos-venv/bin/python - <<'PY'
+          import json, os
+          from pathlib import Path
+          receipt = {
+              "schema_version": 1,
+              "terminal_state": "PASS_CANDIDATE_PUBLISHED",
+              "logical_id": os.environ["LOGICAL_ID"],
+              "upstream_exact_revision": os.environ["UPSTREAM_REVISION"],
+              "oci_repository": os.environ["OCI_REPOSITORY"],
+              "oci_ref": os.environ["OCI_REF"],
+              "oci_digest": os.environ["OCI_DIGEST"],
+              "tool_revision": os.environ["GITHUB_SHA"],
+              "pullback_verified": True,
+              "generic_hydrator_first_pass": True,
+              "generic_hydrator_second_offline_pass": True,
+              "offline_forecast_smoke_after_hydration": True,
+              "approved_catalog_promoted": False,
+          }
+          Path("evidence/hydration-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+          PY
+
+      - name: Persist candidate evidence on evidence branch
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_DIR="candidates/forecast-chronos-bolt-tiny/${UPSTREAM_REVISION}/${GITHUB_SHA}"
+          BRANCH="evidence/chronos-bolt-tiny-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${EVIDENCE_DIR}"
+          cp evidence/candidate.json "${EVIDENCE_DIR}/candidate.json"
+          cp evidence/hydration-receipt.json "${EVIDENCE_DIR}/hydration-receipt.json"
+          cp evidence/runtime-freeze.txt "${EVIDENCE_DIR}/runtime-freeze.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
+          git add "${EVIDENCE_DIR}"
+          git commit -m "evidence: record Chronos Bolt Tiny candidate proof"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "path=${EVIDENCE_DIR}" >> "${GITHUB_OUTPUT}"
+
+      - name: Candidate proof summary
+        shell: bash
+        run: |
+          {
+            echo "## Chronos Bolt Tiny candidate proof"
+            echo
+            echo "- logical id: \`${LOGICAL_ID}\`"
+            echo "- upstream revision: \`${UPSTREAM_REVISION}\`"
+            echo "- OCI digest: \`${{ steps.publish.outputs.digest }}\`"
+            echo "- evidence branch: \`${{ steps.evidence.outputs.branch }}\`"
+            echo "- evidence commit: \`${{ steps.evidence.outputs.sha }}\`"
+            echo "- approved catalog promoted: \`false\`"
+            echo
+            echo "Candidate qualification/publication evidence is not catalog approval."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload bounded evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: foundry-chronos-bolt-tiny-candidate-${{ github.run_id }}
+          path: |
+            evidence/candidate.json
+            evidence/hydration-receipt.json
+            evidence/runtime-freeze.txt
+            dist/bundle-manifest.json
+            dist/NOTICE.txt
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 9
