@@ -26,6 +26,17 @@ Evidence source:
 - config: `sha256:de9fed2251b37295b763727a59ca35cf5cfe5c7379bc3e2104b2ce3c145aa887`
 - observed pull wall time: `24 s`
 
+
+## Upstream-lineage observations (2026-09-18)
+
+Current public metadata narrows the likely lineage without proving byte derivation:
+
+- Ollama `qwen3.5:4b` identifies the packaged model as Qwen3.5 4B, 4.66B parameters, `Q4_K_M`, with Apache-2.0 license metadata.
+- The official post-trained upstream model is `Qwen/Qwen3.5-4B` on Hugging Face, also Apache-2.0.
+- Treat `Qwen/Qwen3.5-4B` as the **upstream source candidate**, not yet the canonical exact source revision for the captured Ollama layer.
+
+Still unproven: a reproducible or vendor-published quantization/conversion chain tying the captured Ollama model-layer digest to a specific immutable upstream revision. Do not promote this evidence into a Foundry candidate manifest until that mapping is established or the Foundry explicitly supports the Ollama registry artifact itself as a canonical source.
+
 ## What this evidence establishes
 
 It establishes the exact Ollama manifest and layer identities used by that run and provides a durable cross-repository pointer to the execution evidence.
