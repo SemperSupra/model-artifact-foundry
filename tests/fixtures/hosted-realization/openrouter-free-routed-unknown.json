@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "kind": "hosted-realization",
+  "provider": "openrouter",
+  "requested_model": "openrouter/free",
+  "resolved_model": null,
+  "provider_model_version": null,
+  "system_fingerprint": null,
+  "api_interface": "openrouter:free-router",
+  "service_tier": null,
+  "observed_at": "2026-09-20T14:07:57Z",
+  "provenance_strength": "ROUTED_UNKNOWN",
+  "route": {
+    "mode": "intermediary",
+    "intermediary": "openrouter",
+    "upstream_provider": null,
+    "fallback_observed": null
+  },
+  "evidence": {
+    "source": "model-spelunker-run:20260920T140757Z-1bc0dce5",
+    "response_metadata_digest": null
+  }
+}

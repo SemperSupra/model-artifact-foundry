@@ -1,0 +1,31 @@
+name: Hosted realization contract
+
+on:
+  pull_request:
+    paths:
+      - "schemas/hosted-realization.schema.json"
+      - "docs/contracts/hosted-realization.md"
+      - "tests/test_hosted_realization.py"
+      - ".github/workflows/hosted-realization-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/hosted-realization.schema.json"
+      - "docs/contracts/hosted-realization.md"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Validate hosted realization contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input "jsonschema==4.25.1"
+          python3 tests/test_hosted_realization.py
