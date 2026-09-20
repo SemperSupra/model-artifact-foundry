@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "kind": "hosted-realization",
+  "provider": "google",
+  "requested_model": "gemini-3.7-flash",
+  "resolved_model": null,
+  "provider_model_version": null,
+  "system_fingerprint": null,
+  "api_interface": "direct:google-ai-studio",
+  "service_tier": null,
+  "observed_at": "2026-09-20T14:11:29Z",
+  "provenance_strength": "NAMED_HOSTED",
+  "route": {
+    "mode": "direct",
+    "intermediary": null,
+    "upstream_provider": null,
+    "fallback_observed": null
+  },
+  "evidence": {
+    "source": "model-spelunker-run:20260920T141129Z-80bfd1b7",
+    "response_metadata_digest": null
+  }
+}
