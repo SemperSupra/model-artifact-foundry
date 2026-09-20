@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/hosted-realization.schema.json",
+  "title": "Hosted Model Realization Observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "provider",
+    "requested_model",
+    "provenance_strength",
+    "observed_at",
+    "route"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "hosted-realization"
+      ]
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requested_model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolved_model": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provider_model_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "system_fingerprint": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "api_interface": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "service_tier": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance_strength": {
+      "type": "string",
+      "enum": [
+        "VERSIONED_HOSTED",
+        "FINGERPRINTED_HOSTED",
+        "NAMED_HOSTED",
+        "MUTABLE_ALIAS",
+        "ROUTED_UNKNOWN"
+      ]
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "intermediary"
+          ]
+        },
+        "intermediary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "upstream_provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fallback_observed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_metadata_digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(sha256:[0-9a-f]{64})?$"
+        }
+      }
+    }
+  }
+}
