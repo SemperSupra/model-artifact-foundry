@@ -50,3 +50,11 @@ else:
     raise AssertionError("unknown routing mode should fail closed")
 
 print("PASS hosted realization contract")
+
+
+for path in sorted(Path("tests/fixtures/hosted-realization").glob("*.json")):
+    value=json.loads(path.read_text())
+    jsonschema.validate(value,schema)
+    assert value["kind"]=="hosted-realization"
+    assert value["observed_at"]
+print("PASS hosted realization observed fixtures")
