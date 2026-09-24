@@ -1,0 +1,78 @@
+name: Validate Piper German Thorsten medium
+
+on:
+  push:
+    branches:
+      - exp/piper-de-de-thorsten-tts-admission
+    paths:
+      - ".github/workflows/validate-piper-de-de-thorsten.yml"
+      - "sources/piper-de-de-thorsten-medium.json"
+      - "schemas/source-declaration.schema.json"
+      - "tools/validate_piper_voice.py"
+  pull_request:
+    paths:
+      - ".github/workflows/validate-piper-de-de-thorsten.yml"
+      - "sources/piper-de-de-thorsten-medium.json"
+      - "schemas/source-declaration.schema.json"
+      - "tools/validate_piper_voice.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-piper-de-de-thorsten-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned validation runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-input             "jsonschema==4.25.1"             "piper-tts==1.8.0"
+
+      - name: Validate declaration and validator source
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/validate_piper_voice.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          schema=json.loads(Path("schemas/source-declaration.schema.json").read_text())
+          doc=json.loads(Path("sources/piper-de-de-thorsten-medium.json").read_text())
+          jsonschema.Draft202012Validator.check_schema(schema)
+          jsonschema.validate(doc,schema)
+          assert doc["logical_id"] == "tts/piper/de-de-thorsten-medium"
+          assert doc["source"]["discovery_ref"] == "6249c8a9178e606f0de19227d5426e5dfaf9fc9e"
+          PY
+
+      - name: Acquire exact voice and run bounded structural synthesis validation
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/piper-validation"
+          python tools/validate_piper_voice.py             --source-declaration sources/piper-de-de-thorsten-medium.json             --output "$RUNNER_TEMP/piper-validation/validation.json"             --wav-output "$RUNNER_TEMP/piper-validation/validation.wav"
+
+      - name: Upload short-retention validation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: piper-de-de-thorsten-validation-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/piper-validation/validation.json
+            ${{ runner.temp }}/piper-validation/validation.wav
+          if-no-files-found: error
+          retention-days: 7
