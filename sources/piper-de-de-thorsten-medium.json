@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "logical_id": "tts/piper/de-de-thorsten-medium",
+  "source": {
+    "provider": "huggingface",
+    "repository": "rhasspy/piper-voices",
+    "discovery_ref": "6249c8a9178e606f0de19227d5426e5dfaf9fc9e"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "MIT"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "tts/piper-vits",
+    "format": "piper-onnx-voice",
+    "expected_file_patterns": [
+      "MODEL_CARD",
+      "de_DE-thorsten-medium.onnx",
+      "de_DE-thorsten-medium.onnx.json"
+    ],
+    "max_unpacked_bytes": 80000000
+  },
+  "validator_profile": "piper-de-de-thorsten-structural-v1",
+  "redistribution_notices": [
+    "Preserve and verify upstream voice-model license and training-dataset provenance separately from the GPL-licensed Piper validation runtime.",
+    "This declaration does not establish speech quality, intelligibility, naturalness, or product suitability."
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
