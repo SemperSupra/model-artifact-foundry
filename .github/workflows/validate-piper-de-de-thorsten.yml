@@ -1,20 +1,6 @@
 name: Validate Piper German Thorsten medium
 
 on:
-  push:
-    branches:
-      - exp/piper-de-de-thorsten-tts-admission
-    paths:
-      - ".github/workflows/validate-piper-de-de-thorsten.yml"
-      - "sources/piper-de-de-thorsten-medium.json"
-      - "schemas/source-declaration.schema.json"
-      - "tools/validate_piper_voice.py"
-  pull_request:
-    paths:
-      - ".github/workflows/validate-piper-de-de-thorsten.yml"
-      - "sources/piper-de-de-thorsten-medium.json"
-      - "schemas/source-declaration.schema.json"
-      - "tools/validate_piper_voice.py"
   workflow_dispatch:
 
 permissions:
