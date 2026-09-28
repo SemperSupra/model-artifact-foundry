@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "logical_id": "terrain/xandergos/terrain-diffusion-30m-onnx",
+  "source": {
+    "provider": "huggingface",
+    "repository": "xandergos/terrain-diffusion-30m-onnx",
+    "discovery_ref": "ad2df557eca5645f588766101cf3bc3682455c3e"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "MIT"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "terrain/xandergos-terrain-diffusion",
+    "format": "onnx-bundle",
+    "expected_file_patterns": [
+      "base_model.onnx",
+      "coarse_model.onnx",
+      "decoder_model.onnx",
+      "pipeline_data.json",
+      "world_pipeline_config.json"
+    ],
+    "max_unpacked_bytes": 2500000000
+  },
+  "validator_profile": "terrain-diffusion-30m-onnx-pipeline-smoke-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/xandergos/terrain-diffusion-30m-onnx",
+    "Observed source license metadata: MIT",
+    "Pinned by terrain-diffusion-mc build.gradle at revision ad2df557eca5645f588766101cf3bc3682455c3e"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
