@@ -1,4 +1,4 @@
-name: Faster Whisper tiny PoC
+name: Legacy Faster Whisper tiny PoC
 
 on:
   pull_request:
@@ -6,7 +6,9 @@ on:
       - ".github/workflows/poc-faster-whisper-tiny.yml"
       - "sources/faster-whisper-tiny.json"
       - "catalog/approved.json"
-      - "schemas/**"
+      - "schemas/source-declaration.schema.json"
+      - "schemas/approved-catalog.schema.json"
+      - "schemas/candidate-manifest.schema.json"
       - "tools/harvest_poc.py"
       - "tools/hydrate.py"
       - "docs/poc/faster-whisper-tiny.md"
