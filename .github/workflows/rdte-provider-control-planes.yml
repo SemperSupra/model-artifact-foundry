@@ -85,26 +85,9 @@ jobs:
 
             go test ./tests/e2e -v -count=1 -timeout=15m               -ginkgo.focus='[Ff]ailover'
 
-            python3 - <<'PY'
-            import json
-            from pathlib import Path
-            receipt = {
-                "candidate": "LocalAI",
-                "release": "v4.11.0",
-                "commit": "58830f7ac508845a6f4efa32cfca06af422d4d82",
-                "checks": {
-                    "upstream_mock_backend_built": True,
-                    "multimodal_mock_e2e": True,
-                    "failover_mock_e2e": True,
-                    "cpu_only_ci": True,
-                },
-            }
-            Path(os.environ["GITHUB_WORKSPACE"], "localai-receipt.json").write_text(
-                json.dumps(receipt, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-            print(json.dumps(receipt, indent=2, sort_keys=True))
-            PY
+            printf '%s\n' '{"candidate":"LocalAI","release":"v4.11.0","commit":"58830f7ac508845a6f4efa32cfca06af422d4d82","checks":{"upstream_mock_backend_built":true,"multimodal_mock_e2e":true,"failover_mock_e2e":true,"cpu_only_ci":true}}' \
+              > "$GITHUB_WORKSPACE/localai-receipt.json"
+            cat "$GITHUB_WORKSPACE/localai-receipt.json"
           )
           rc=$?
           echo "$rc" > /tmp/localai.rc
