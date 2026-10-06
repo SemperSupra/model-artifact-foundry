@@ -82,11 +82,16 @@ jobs:
             make react-ui
             make prepare-test
 
-            go test ./tests/e2e -v -count=1 -timeout=15m               -ginkgo.label-filter=Multimodal
+            set -o pipefail
+            go test ./tests/e2e -v -count=1 -timeout=15m \
+              -ginkgo.label-filter=MockBackend | tee /tmp/localai-mockbackend.log
+            grep -Eq 'Ran [1-9][0-9]* of [0-9]+ Specs' /tmp/localai-mockbackend.log
 
-            go test ./tests/e2e -v -count=1 -timeout=15m               -ginkgo.focus='[Ff]ailover'
+            go test ./tests/e2e -v -count=1 -timeout=15m \
+              -ginkgo.focus='[Ff]ailover' | tee /tmp/localai-failover.log
+            grep -Eq 'Ran [1-9][0-9]* of [0-9]+ Specs' /tmp/localai-failover.log
 
-            printf '%s\n' '{"candidate":"LocalAI","release":"v4.11.0","commit":"58830f7ac508845a6f4efa32cfca06af422d4d82","checks":{"upstream_mock_backend_built":true,"multimodal_mock_e2e":true,"failover_mock_e2e":true,"cpu_only_ci":true}}' \
+            printf '%s\n' '{"candidate":"LocalAI","release":"v4.11.0","commit":"58830f7ac508845a6f4efa32cfca06af422d4d82","checks":{"upstream_mock_backend_built":true,"mockbackend_multimodal_e2e_nonvacuous":true,"failover_mock_e2e_nonvacuous":true,"cpu_only_ci":true}}' \
               > "$GITHUB_WORKSPACE/localai-receipt.json"
             cat "$GITHUB_WORKSPACE/localai-receipt.json"
           )
