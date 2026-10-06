@@ -79,6 +79,7 @@ jobs:
             test "$(git -C "$work" rev-parse HEAD)" = "58830f7ac508845a6f4efa32cfca06af422d4d82"
 
             cd "$work"
+            make react-ui
             make prepare-test
 
             go test ./tests/e2e -v -count=1 -timeout=15m               -ginkgo.label-filter=Multimodal
