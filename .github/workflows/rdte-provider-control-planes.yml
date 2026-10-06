@@ -99,7 +99,7 @@ jobs:
                     "cpu_only_ci": True,
                 },
             }
-            Path("$GITHUB_WORKSPACE/localai-receipt.json").write_text(
+            Path(os.environ["GITHUB_WORKSPACE"], "localai-receipt.json").write_text(
                 json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
