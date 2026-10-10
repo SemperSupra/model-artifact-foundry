@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "logical_id": "dataset/pst/bodu-pstsdk-v14-v23-four",
+  "artifact_kind": "dataset",
+  "materialization_mode": "manifest-only",
+  "components": [
+    {
+      "name": "unicode-v23-one-message",
+      "role": "other",
+      "distribution": "manifest-only",
+      "source": {
+        "provider": "github",
+        "locator": "https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/samples/IO.Pst/Bodu.IO.Pst.Samples.PstBasics/Data/sample1.pst",
+        "exact_revision": "8e9cc7855169d75217623d9a58d71872460c6424",
+        "sha256": "9e77f0f7937768506f85eb33b7c114e23ddf3bc7fd5d85226fce56586a8e3618"
+      },
+      "license": {
+        "status": "unresolved",
+        "spdx_id": null,
+        "redistribution_permitted": false,
+        "evidence": [
+          "Source fixture rights are asserted by upstream Bodu/pstsdk NOTICE, but artifact-specific redistribution permission has not been independently approved. Identity-only candidate; do not mirror or publish bytes. https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/NOTICE.md"
+        ]
+      }
+    },
+    {
+      "name": "unicode-v23-zero-message",
+      "role": "other",
+      "distribution": "manifest-only",
+      "source": {
+        "provider": "github",
+        "locator": "https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/unicode/test_unicode.pst",
+        "exact_revision": "8e9cc7855169d75217623d9a58d71872460c6424",
+        "sha256": "3f2b8ebf011ca754b9c2017d264423e173ef1407f460bd4cefde4a6ccc041f8b"
+      },
+      "license": {
+        "status": "unresolved",
+        "spdx_id": null,
+        "redistribution_permitted": false,
+        "evidence": [
+          "Source fixture rights are asserted by upstream Bodu/pstsdk NOTICE, but artifact-specific redistribution permission has not been independently approved. Identity-only candidate; do not mirror or publish bytes. https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/NOTICE.md"
+        ]
+      }
+    },
+    {
+      "name": "ansi-v14-one-message",
+      "role": "other",
+      "distribution": "manifest-only",
+      "source": {
+        "provider": "github",
+        "locator": "https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/samples/IO.Pst/Bodu.IO.Pst.Samples.PstBasics/Data/sample2.pst",
+        "exact_revision": "8e9cc7855169d75217623d9a58d71872460c6424",
+        "sha256": "587a1ae2785eb218d7d42a98d43ded546aa72670908269d7b3ab25a711a91871"
+      },
+      "license": {
+        "status": "unresolved",
+        "spdx_id": null,
+        "redistribution_permitted": false,
+        "evidence": [
+          "Source fixture rights are asserted by upstream Bodu/pstsdk NOTICE, but artifact-specific redistribution permission has not been independently approved. Identity-only candidate; do not mirror or publish bytes. https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/NOTICE.md"
+        ]
+      }
+    },
+    {
+      "name": "ansi-v14-zero-message",
+      "role": "other",
+      "distribution": "manifest-only",
+      "source": {
+        "provider": "github",
+        "locator": "https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/ansi/test_ansi.pst",
+        "exact_revision": "8e9cc7855169d75217623d9a58d71872460c6424",
+        "sha256": "f1ff591b7441f8fcf78cc6c65a78c5d168763338f2fcdf3df5745e742bd66d04"
+      },
+      "license": {
+        "status": "unresolved",
+        "spdx_id": null,
+        "redistribution_permitted": false,
+        "evidence": [
+          "Source fixture rights are asserted by upstream Bodu/pstsdk NOTICE, but artifact-specific redistribution permission has not been independently approved. Identity-only candidate; do not mirror or publish bytes. https://github.com/bslater/bodu/blob/8e9cc7855169d75217623d9a58d71872460c6424/Bodu.IO.Pst/test/Fixtures/Reference/NOTICE.md"
+        ]
+      }
+    }
+  ],
+  "validator_profile": "pst-pstsdk-source-identity-v0-candidate",
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}

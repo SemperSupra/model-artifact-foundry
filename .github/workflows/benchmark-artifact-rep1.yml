@@ -7,6 +7,8 @@ on:
       - "examples/benchmarks/**"
       - "tools/validate_benchmark_declaration.py"
       - "tests/test_benchmark_declaration.py"
+      - "tests/test_pst_fixture_declaration.py"
+      - "docs/plans/pst-bodu-public-fixtures.md"
       - "docs/plans/benchmark-artifact-rep1.md"
       - ".github/workflows/benchmark-artifact-rep1.yml"
   workflow_dispatch:
@@ -39,8 +41,10 @@ jobs:
               jsonschema.validate(document, schema)
           PY
 
-      - name: Run benchmark boundary tests
-        run: python3 -m unittest discover -s tests -p 'test_benchmark_declaration.py' -v
+      - name: Run benchmark and PST fixture identity boundary tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_benchmark_declaration.py' -v
+          python3 -m unittest discover -s tests -p 'test_pst_fixture_declaration.py' -v
 
       - name: Exercise declarations through boundary validator
         shell: bash
@@ -48,6 +52,7 @@ jobs:
           set -euo pipefail
           python3 tools/validate_benchmark_declaration.py examples/benchmarks/visual-contract-generator.json
           python3 tools/validate_benchmark_declaration.py examples/benchmarks/open-images-v7.json
+          python3 tools/validate_benchmark_declaration.py examples/benchmarks/pst-bodu-pstsdk-four.json
 
       - name: Compile validator
         run: python3 -m py_compile tools/validate_benchmark_declaration.py
