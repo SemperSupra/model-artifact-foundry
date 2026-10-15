@@ -1,0 +1,32 @@
+name: MAF local adoption receipt integrity contract (offline)
+
+on:
+  pull_request:
+    paths:
+      - 'tools/adopt_local_artifact.py'
+      - 'tools/verify_local_adoption_receipt.py'
+      - 'tests/test_local_adoption_receipt_integrity.py'
+      - 'docs/contracts/local-adoption-receipt-integrity.md'
+      - '.github/workflows/local-adoption-receipt-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-canonical-receipt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Run legacy and tamper negative tests offline
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p test_gated_local_acquisition.py -v
+          python3 -m unittest discover -s tests -p test_hf_native_content_identity.py -v
+          python3 -m unittest discover -s tests -p test_local_adoption_receipt_integrity.py -v
+          python3 -m compileall -q tools/adopt_local_artifact.py tools/verify_local_adoption_receipt.py
+          git rev-parse HEAD

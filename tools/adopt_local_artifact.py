@@ -118,6 +118,92 @@ def adopt_file_records(
     }
 
 
+
+def verify_local_adoption_receipt(record: dict[str, Any], expected_digest: str) -> dict[str, Any]:
+    """Verify received Foundry identity/material, NOT the underlying local file bytes.
+
+    A consumer must separately have Foundry rehash native cache bytes before
+    treating this receipt as current. The expected digest is retained authority
+    from a distinct channel; self-consistent but unapproved identity is not enough.
+    """
+    import re
+    from pathlib import PurePosixPath
+
+    digest_re = re.compile(r"sha256:[0-9a-f]{64}\Z")
+    if not isinstance(expected_digest, str) or not digest_re.fullmatch(expected_digest):
+        raise ValueError("Missing immutable authorized expected content-manifest digest")
+    if not isinstance(record, dict) or set(record) != {
+        "schema_version", "logical_id", "upstream", "access",
+        "files", "artifact_identity", "redistribution"
+    } or record.get("schema_version") != 1:
+        raise ValueError("Unexpected or incomplete local adoption receipt")
+    identity = record["artifact_identity"]
+    if identity != {"kind": "content-manifest", "digest": expected_digest}:
+        raise ValueError("Local content identity not exact approved subject")
+    if record["redistribution"] != {"public_publish_allowed": False}:
+        raise ValueError("Missing explicit nonpublication hold")
+    if record["access"] not in (
+        {"mode": "restricted"}, {"mode": "user-accepted-gated"}, {"mode": "authenticated-gated"}
+    ):
+        raise ValueError("Unknown local-only access mode")
+    logical = record["logical_id"]
+    if not isinstance(logical, str) or not re.fullmatch(r"[a-z0-9][a-z0-9._/-]{2,}", logical):
+        raise ValueError("Unsafe or absent logical artifact ID")
+    upstream = record["upstream"]
+    if not isinstance(upstream, dict) or set(upstream) != {"provider", "repository", "exact_revision"}:
+        raise ValueError("Incomplete upstream identity")
+    if upstream["provider"] not in ("huggingface", "github-release", "https", "other"):
+        raise ValueError("Unrecognized source provider")
+    if not isinstance(upstream["repository"], str) or not upstream["repository"].strip():
+        raise ValueError("Missing origin repository")
+    revision = upstream["exact_revision"]
+    if not isinstance(revision, str) or revision != revision.strip() or len(revision) < 7:
+        raise ValueError("Unpinned upstream revision")
+    files = record["files"]
+    if not isinstance(files, list) or not 1 <= len(files) <= 10000:
+        raise ValueError("Empty or oversized receipt file list")
+    total = 0
+    # Original existing adopters preserve their discovered file-record order.
+    # Canonical JSON hashes that exact ordered list; do not silently sort it
+    # and invalidate previously frozen identities. Reject duplicate names.
+    seen_paths = set()
+    for row in files:
+        if not isinstance(row, dict) or set(row) != {"path", "size_bytes", "sha256"}:
+            raise ValueError("Malformed file identity")
+        path = row["path"]
+        if not isinstance(path, str) or not path or chr(92) in path or chr(0) in path:
+            raise ValueError("Unsafe file path")
+        pure = PurePosixPath(path)
+        if pure.is_absolute() or not pure.parts or any(p in ("..", ".") for p in path.split("/")):
+            raise ValueError("Absolute or traversing model path")
+        if path != pure.as_posix() or path in seen_paths:
+            raise ValueError("Unsafe or duplicate model file paths")
+        seen_paths.add(path)
+        size = row["size_bytes"]
+        if type(size) is not int or size < 0:
+            raise ValueError("Invalid model file length")
+        total += size
+        if total > 20 * 1024 * 1024 * 1024:
+            raise ValueError("Model inventory size budget exceeded")
+        sha = row["sha256"]
+        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{64}", sha):
+            raise ValueError("Missing model file checksum")
+    calculated = content_manifest_digest({
+        "schema_version": 1,
+        "logical_id": logical,
+        "upstream": upstream,
+        "files": files,
+    })
+    if calculated != expected_digest:
+        raise ValueError("File identities do not match frozen Foundry content-manifest digest")
+    return {
+        "schema": "foundry-local-adoption-receipt-verification/v1",
+        "result": "RECEIPT_INTEGRITY_PASS_NOT_CACHE_BYTE_REHASH",
+        "artifact_identity": {"kind": "content-manifest", "digest": calculated},
+        "files": len(files), "public_publish_allowed": False,
+    }
+
+
 def adopt(declaration: dict[str, Any], root: Path, exact_revision: str) -> dict[str, Any]:
     return adopt_file_records(declaration, enumerate_files(root), exact_revision)
 
