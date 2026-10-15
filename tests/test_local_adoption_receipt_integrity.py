@@ -33,6 +33,22 @@ class LocalManifestReceiptVerification(unittest.TestCase):
         r["files"][1]["sha256"]="0"*64
         with self.assertRaisesRegex(ValueError,"do not match"):
             verify_local_adoption_receipt(r,d)
+    def test_legacy_hf_adopter_order_is_valid_but_swapped_order_changes_digest(self):
+        # Existing native HF os.walk traversal is deterministic but may not
+        # be globally alphabetic; the already-frozen digest hashes that order.
+        record,d=self.receipt()
+        ordered=copy.deepcopy(record)
+        ordered["files"].reverse()
+        from adopt_local_artifact import content_manifest_digest
+        new_material={"schema_version":1,"logical_id":ordered["logical_id"],
+                      "upstream":ordered["upstream"],"files":ordered["files"]}
+        approved_digest=content_manifest_digest(new_material)
+        ordered["artifact_identity"]["digest"]=approved_digest
+        result=verify_local_adoption_receipt(ordered,approved_digest)
+        self.assertEqual(result["artifact_identity"]["digest"],approved_digest)
+        with self.assertRaises(ValueError):
+            verify_local_adoption_receipt(ordered,d)
+
     def test_unexpected_canonical_but_unapproved_digest_rejected(self):
         r,d=self.receipt()
         with self.assertRaises(ValueError):
@@ -41,7 +57,7 @@ class LocalManifestReceiptVerification(unittest.TestCase):
         bads=[]
         r,d=self.receipt()
         z=copy.deepcopy(r);z["files"][1]["path"]="../secret";bads.append(z)
-        z=copy.deepcopy(r);z["files"].reverse();bads.append(z)
+        z=copy.deepcopy(r);z["files"].reverse();bads.append(z) # old headline digest now mismatches
         z=copy.deepcopy(r);z["files"][0]["size_bytes"]=True;bads.append(z)
         z=copy.deepcopy(r);z["files"][1]["size_bytes"]=-1;bads.append(z)
         z=copy.deepcopy(r);z["redistribution"]["public_publish_allowed"]=True;bads.append(z)
