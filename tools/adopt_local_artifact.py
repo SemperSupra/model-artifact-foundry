@@ -163,7 +163,10 @@ def verify_local_adoption_receipt(record: dict[str, Any], expected_digest: str) 
     if not isinstance(files, list) or not 1 <= len(files) <= 10000:
         raise ValueError("Empty or oversized receipt file list")
     total = 0
-    previous = ""
+    # Original existing adopters preserve their discovered file-record order.
+    # Canonical JSON hashes that exact ordered list; do not silently sort it
+    # and invalidate previously frozen identities. Reject duplicate names.
+    seen_paths = set()
     for row in files:
         if not isinstance(row, dict) or set(row) != {"path", "size_bytes", "sha256"}:
             raise ValueError("Malformed file identity")
@@ -173,9 +176,9 @@ def verify_local_adoption_receipt(record: dict[str, Any], expected_digest: str) 
         pure = PurePosixPath(path)
         if pure.is_absolute() or not pure.parts or any(p in ("..", ".") for p in path.split("/")):
             raise ValueError("Absolute or traversing model path")
-        if path != pure.as_posix() or path <= previous:
-            raise ValueError("Noncanonical or duplicate model file paths")
-        previous = path
+        if path != pure.as_posix() or path in seen_paths:
+            raise ValueError("Unsafe or duplicate model file paths")
+        seen_paths.add(path)
         size = row["size_bytes"]
         if type(size) is not int or size < 0:
             raise ValueError("Invalid model file length")
