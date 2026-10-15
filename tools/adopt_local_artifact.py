@@ -129,7 +129,7 @@ def verify_local_adoption_receipt(record: dict[str, Any], expected_digest: str) 
     import re
     from pathlib import PurePosixPath
 
-    digest_re = re.compile(r"sha256:[0-9a-f]{64}\\Z")
+    digest_re = re.compile(r"sha256:[0-9a-f]{64}\Z")
     if not isinstance(expected_digest, str) or not digest_re.fullmatch(expected_digest):
         raise ValueError("Missing immutable authorized expected content-manifest digest")
     if not isinstance(record, dict) or set(record) != {
@@ -168,7 +168,7 @@ def verify_local_adoption_receipt(record: dict[str, Any], expected_digest: str) 
         if not isinstance(row, dict) or set(row) != {"path", "size_bytes", "sha256"}:
             raise ValueError("Malformed file identity")
         path = row["path"]
-        if not isinstance(path, str) or not path or "\\\\" in path or "\\x00" in path:
+        if not isinstance(path, str) or not path or chr(92) in path or chr(0) in path:
             raise ValueError("Unsafe file path")
         pure = PurePosixPath(path)
         if pure.is_absolute() or not pure.parts or any(p in ("..", ".") for p in path.split("/")):
