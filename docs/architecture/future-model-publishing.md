@@ -79,4 +79,4 @@ Publishing is an external mutation. The preferred sequence is:
 
 Do not implement generalized publishing automation, hosting, or gated portals now. Revisit only when one real internally-created model is approaching a release/promotion decision. Use that real model as the bounded vertical slice and red-team the selected venue before external mutation.
 
-Tracking: public issue #20; private operational/control counterpart `SemperSupra/model-artifact-foundry-private#9`.
+Tracking: public issue #20. Any restricted operational counterpart is maintained under its own access-controlled authority and is not documented here.
