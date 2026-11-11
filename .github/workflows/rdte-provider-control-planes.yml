@@ -1,0 +1,172 @@
+name: RDTE provider control planes
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rdte-provider-control-planes.yml"
+      - "poc/provider-control-plane-rdte/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Set up Go 1.26
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.0"
+          cache: false
+
+      - name: Qualify llama-swap black-box control plane
+        shell: bash
+        run: |
+          set +e
+          (
+            set -euo pipefail
+            work=/tmp/provider-rdte-llama-swap
+            state=/tmp/provider-rdte-state
+            rm -rf "$work" "$state"
+            mkdir -p "$work" "$state"
+            export RDTE_STATE_DIR="$state"
+            export LLAMA_SWAP_URL="http://127.0.0.1:18080"
+            export RDTE_LLAMA_RECEIPT="$GITHUB_WORKSPACE/llama-swap-receipt.json"
+
+            curl -fsSL               https://github.com/mostlygeek/llama-swap/releases/download/v262/llama-swap_262_linux_amd64.tar.gz               -o "$work/llama-swap.tar.gz"
+            echo "871b3ed7891f8ce057428f5a34d38298e06c36c6848c1136e05308eb4303af50  $work/llama-swap.tar.gz" | sha256sum -c -
+            tar -xzf "$work/llama-swap.tar.gz" -C "$work"
+            bin="$(find "$work" -type f -name llama-swap -perm -u+x | head -n1)"
+            test -n "$bin"
+            "$bin" -version
+
+            "$bin"               -config "$GITHUB_WORKSPACE/poc/provider-control-plane-rdte/llama-swap.yaml"               -listen 127.0.0.1:18080               >"$work/llama-swap.log" 2>&1 &
+            swap_pid=$!
+            cleanup() {
+              kill "$swap_pid" 2>/dev/null || true
+              wait "$swap_pid" 2>/dev/null || true
+              echo "----- llama-swap log -----"
+              cat "$work/llama-swap.log" || true
+            }
+            trap cleanup EXIT
+
+            python3 "$GITHUB_WORKSPACE/poc/provider-control-plane-rdte/test_llama_swap.py"
+          )
+          rc=$?
+          echo "$rc" > /tmp/llama-swap.rc
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::llama-swap qualification lane failed with rc=$rc"
+          fi
+          exit 0
+
+      - name: Qualify LocalAI mock-backed control plane
+        shell: bash
+        run: |
+          set +e
+          (
+            set -euo pipefail
+            work=/tmp/provider-rdte-localai
+            rm -rf "$work"
+            git init "$work"
+            git -C "$work" remote add origin https://github.com/mudler/LocalAI.git
+            git -C "$work" fetch --depth=1 origin 58830f7ac508845a6f4efa32cfca06af422d4d82
+            git -C "$work" checkout --detach FETCH_HEAD
+            test "$(git -C "$work" rev-parse HEAD)" = "58830f7ac508845a6f4efa32cfca06af422d4d82"
+
+            cd "$work"
+            make react-ui
+            make prepare-test
+
+            set -o pipefail
+            go test ./tests/e2e -v -count=1 -timeout=15m \
+              -ginkgo.label-filter=MockBackend | tee /tmp/localai-mockbackend.log
+            grep -Eq 'Ran [1-9][0-9]* of [0-9]+ Specs' /tmp/localai-mockbackend.log
+
+            go test ./tests/e2e -v -count=1 -timeout=15m \
+              -ginkgo.focus='[Ff]ailover' | tee /tmp/localai-failover.log
+            grep -Eq 'Ran [1-9][0-9]* of [0-9]+ Specs' /tmp/localai-failover.log
+
+            go test ./tests/e2e -v -count=1 -timeout=15m \
+              -ginkgo.label-filter=Router | tee /tmp/localai-router.log
+            grep -Eq 'Ran [1-9][0-9]* of [0-9]+ Specs' /tmp/localai-router.log
+
+            printf '%s\n' '{"candidate":"LocalAI","release":"v4.11.0","commit":"58830f7ac508845a6f4efa32cfca06af422d4d82","checks":{"upstream_mock_backend_built":true,"mockbackend_multimodal_e2e_nonvacuous":true,"failover_mock_e2e_nonvacuous":true,"smart_router_e2e_nonvacuous":true,"cpu_only_ci":true}}' \
+              > "$GITHUB_WORKSPACE/localai-receipt.json"
+            cat "$GITHUB_WORKSPACE/localai-receipt.json"
+          )
+          rc=$?
+          echo "$rc" > /tmp/localai.rc
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::LocalAI qualification lane failed with rc=$rc"
+          fi
+          exit 0
+
+      - name: Emit qualification receipt and gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          def rc(path):
+              p = Path(path)
+              return int(p.read_text().strip()) if p.exists() else 99
+
+          llama_rc = rc("/tmp/llama-swap.rc")
+          localai_rc = rc("/tmp/localai.rc")
+
+          def load(path):
+              p = root / path
+              if not p.exists():
+                  return None
+              return json.loads(p.read_text())
+
+          receipt = {
+              "schema": "provider-control-plane-rdte/v1",
+              "runner_claim": "CPU-only GitHub-hosted Linux; no HIL/Metal claim",
+              "candidates": {
+                  "llama-swap": {
+                      "release": "v262",
+                      "commit": "079c35ae82fb2816d319f7bd16936675597b262d",
+                      "lane_rc": llama_rc,
+                      "evidence": load("llama-swap-receipt.json"),
+                  },
+                  "LocalAI": {
+                      "release": "v4.11.0",
+                      "commit": "58830f7ac508845a6f4efa32cfca06af422d4d82",
+                      "lane_rc": localai_rc,
+                      "evidence": load("localai-receipt.json"),
+                  },
+              },
+              "gate": {
+                  "llama_swap_pass": llama_rc == 0,
+                  "localai_pass": localai_rc == 0,
+                  "both_lanes_executed": llama_rc != 99 and localai_rc != 99,
+              },
+          }
+          (root / "provider-rdte-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as fh:
+              fh.write("## Local capability-provider control-plane RDTE\n\n")
+              fh.write("| Candidate | Exact identity | Result |\n")
+              fh.write("|---|---|---|\n")
+              fh.write(f"| llama-swap | v262 / `079c35ae82fb2816d319f7bd16936675597b262d` | {'PASS' if llama_rc == 0 else 'FAIL'} |\n")
+              fh.write(f"| LocalAI | v4.11.0 / `58830f7ac508845a6f4efa32cfca06af422d4d82` | {'PASS' if localai_rc == 0 else 'FAIL'} |\n")
+              fh.write("\nGHA evidence is control-plane-only; Apple Silicon/Metal and real-model behavior remain HIL gates.\n")
+
+          if llama_rc != 0 or localai_rc != 0:
+              raise SystemExit(1)
+          PY

@@ -1,0 +1,56 @@
+healthCheckTimeout: 15
+logLevel: info
+logToStdout: "proxy,upstream"
+globalTTL: 2
+startPort: 15100
+
+models:
+  general-a:
+    cmd: >-
+      python3 ${env.GITHUB_WORKSPACE}/poc/provider-control-plane-rdte/mock_openai.py
+      --port ${PORT}
+      --model-id general-a
+      --state-dir ${env.RDTE_STATE_DIR}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 2
+
+  code-a:
+    cmd: >-
+      python3 ${env.GITHUB_WORKSPACE}/poc/provider-control-plane-rdte/mock_openai.py
+      --port ${PORT}
+      --model-id code-a
+      --state-dir ${env.RDTE_STATE_DIR}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 2
+
+  code-b:
+    cmd: >-
+      python3 ${env.GITHUB_WORKSPACE}/poc/provider-control-plane-rdte/mock_openai.py
+      --port ${PORT}
+      --model-id code-b
+      --state-dir ${env.RDTE_STATE_DIR}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 2
+
+selectors:
+  auto-code:
+    strategy: warm
+    targets: [code-a, code-b]
+    name: "Automatic coding capability"
+    description: "Prefer an already-warm qualified coding target; otherwise cold-start the first."
+
+  auto-general:
+    strategy: pin
+    targets: [general-a]
+    name: "General capability"
+
+routing:
+  router:
+    use: matrix
+    settings:
+      matrix:
+        sets:
+          one-large-model: "(general-a | code-a | code-b)"
