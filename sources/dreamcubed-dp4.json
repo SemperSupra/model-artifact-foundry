@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "logical_id": "voxel/dreamcubed/md4-patch4",
+  "source": {
+    "provider": "huggingface",
+    "repository": "SakanaAI/DreamCubedDP4",
+    "discovery_ref": "980d30e34ef1b74fc232b4f4e33d9b2f88ca5464"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "Apache-2.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "voxel/dreamcubed-md4",
+    "format": "pytorch-checkpoint",
+    "expected_file_patterns": [
+      "config.json",
+      "inference_weights/model_best_weights.pt"
+    ],
+    "max_unpacked_bytes": 1300000000
+  },
+  "validator_profile": "dreamcubed-dp4-load-sample-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/SakanaAI/DreamCubedDP4",
+    "Observed source license metadata: Apache-2.0",
+    "Observed exact revision: 980d30e34ef1b74fc232b4f4e33d9b2f88ca5464",
+    "Observed checkpoint LFS SHA-256: 79d2e1c1b0ba32ffa26ee45fa011fcb518841a141453f484b5d187bdee3d07f0"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
