@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "logical_id": "benchmark/open-images-v7",
+  "artifact_kind": "benchmark",
+  "materialization_mode": "composite",
+  "components": [
+    {
+      "name": "annotations",
+      "role": "annotations",
+      "distribution": "mirror",
+      "source": {
+        "provider": "https",
+        "locator": "https://storage.googleapis.com/openimages/web/download_v7.html"
+      },
+      "license": {
+        "status": "verified",
+        "spdx_id": "CC-BY-4.0",
+        "redistribution_permitted": true,
+        "evidence": ["https://storage.googleapis.com/openimages/web/factsfigures_v7.html"]
+      },
+      "sample_identity": {
+        "split_field": "Subset",
+        "sample_id_field": "ImageID",
+        "source_hash_field": "OriginalMD5"
+      }
+    },
+    {
+      "name": "images",
+      "role": "images",
+      "distribution": "upstream-hydrate",
+      "source": {
+        "provider": "https",
+        "locator": "https://storage.googleapis.com/openimages/web/download_v7.html"
+      },
+      "license": {
+        "status": "unresolved",
+        "spdx_id": "CC-BY-2.0",
+        "redistribution_permitted": false,
+        "evidence": ["Open Images lists images as CC BY 2.0 but explicitly instructs users to verify each image's license status: https://storage.googleapis.com/openimages/web/factsfigures_v7.html"]
+      },
+      "sample_identity": {
+        "split_field": "Subset",
+        "sample_id_field": "ImageID",
+        "source_hash_field": "OriginalMD5"
+      }
+    }
+  ],
+  "validator_profile": "open-images-v7-benchmark-v0",
+  "promotion_policy": {"mode": "review-required"}
+}
