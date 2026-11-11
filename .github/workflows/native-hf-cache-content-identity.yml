@@ -1,0 +1,36 @@
+name: Foundry native HF cache content identity (offline, no publication)
+
+on:
+  pull_request:
+    paths:
+      - 'tools/adopt_local_artifact.py'
+      - 'tools/adopt_hf_native_snapshot.py'
+      - 'tests/test_gated_local_acquisition.py'
+      - 'tests/test_hf_native_content_identity.py'
+      - 'docs/contracts/native-hf-cache-content-identity.md'
+      - '.github/workflows/native-hf-cache-content-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-native-cache-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify local adoption and native HF identity using fake model bytes
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p test_gated_local_acquisition.py -v
+          python3 -m unittest discover -s tests -p test_hf_native_content_identity.py -v
+          python3 -m compileall -q tools/adopt_local_artifact.py tools/adopt_hf_native_snapshot.py
+          git rev-parse HEAD
+      - name: Explicit boundary
+        run: |
+          echo 'No models downloaded, uploaded, redistributed or published.'
+          echo 'Identity is local content-manifest, not OCI approval or inference quality.'

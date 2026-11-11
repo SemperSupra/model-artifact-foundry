@@ -94,8 +94,10 @@ def content_manifest_digest(material: dict[str, Any]) -> str:
     return "sha256:" + hashlib.sha256(canonical).hexdigest()
 
 
-def adopt(declaration: dict[str, Any], root: Path, exact_revision: str) -> dict[str, Any]:
-    files = enumerate_files(root)
+def adopt_file_records(
+    declaration: dict[str, Any], files: list[dict[str, Any]], exact_revision: str
+) -> dict[str, Any]:
+    """Reuse the canonical identity/receipt for independently verified native-cache bytes."""
     material = canonical_identity_material(declaration, exact_revision, files)
     digest = content_manifest_digest(material)
     return {
@@ -114,6 +116,10 @@ def adopt(declaration: dict[str, Any], root: Path, exact_revision: str) -> dict[
             "public_publish_allowed": False,
         },
     }
+
+
+def adopt(declaration: dict[str, Any], root: Path, exact_revision: str) -> dict[str, Any]:
+    return adopt_file_records(declaration, enumerate_files(root), exact_revision)
 
 
 def main() -> int:
