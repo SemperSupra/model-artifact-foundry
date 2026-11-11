@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "logical_id": "forecast/chronos/bolt-tiny",
+  "source": {
+    "provider": "huggingface",
+    "repository": "amazon/chronos-bolt-tiny",
+    "discovery_ref": "a0e552de83495b5c28c14c71c374f3e33280b340"
+  },
+  "license_policy": {
+    "allowed_spdx_ids": [
+      "Apache-2.0"
+    ],
+    "require_redistributable": true,
+    "allow_custom": false,
+    "allow_gated": false
+  },
+  "artifact": {
+    "family": "forecast/chronos-bolt",
+    "format": "safetensors",
+    "expected_file_patterns": [
+      "config.json",
+      "model.safetensors"
+    ],
+    "max_unpacked_bytes": 50000000
+  },
+  "validator_profile": "chronos-bolt-synthetic-forecast-smoke-v1",
+  "redistribution_notices": [
+    "Source: https://huggingface.co/amazon/chronos-bolt-tiny",
+    "Observed source license metadata: Apache-2.0"
+  ],
+  "promotion_policy": {
+    "mode": "review-required"
+  }
+}
