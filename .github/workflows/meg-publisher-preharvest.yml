@@ -1,0 +1,27 @@
+name: meg-publisher-preharvest-contract
+
+on:
+  pull_request:
+    paths:
+      - "discovery/meg-iclr2026/publisher-intake-plan.json"
+      - "tools/validate_meg_publisher_intake.py"
+      - "tests/test_meg_publisher_intake_plan.py"
+      - "docs/discovery/meg-publisher-intake.md"
+      - ".github/workflows/meg-publisher-preharvest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-intake-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Run hostile rights/hash/path tests without downloading publisher bytes
+        run: python3 -m unittest discover -s tests -p 'test_meg_publisher_intake_plan.py' -v
+      - name: Validate all 18 publisher source-locator records
+        run: python3 tools/validate_meg_publisher_intake.py --plan discovery/meg-iclr2026/publisher-intake-plan.json
