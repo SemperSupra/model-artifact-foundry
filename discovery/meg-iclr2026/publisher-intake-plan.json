@@ -1,0 +1,119 @@
+{
+  "schema": "model-artifact-foundry.meg-publisher-source-plan/v1",
+  "state": "PREHARVEST_RIGHTS_HOLD",
+  "intended_purpose": "immutable original MeG ICLR 2026 Stage0 research input source; no checkpoint found",
+  "source_url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+  "outer_sha256": "d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+  "outer_compressed_bytes": 81010254,
+  "inner_path": "code_and_data_for_our_MeG/data_for_our_MeG.zip",
+  "inner_sha256": "10f0cad94529f9d1522a34dad9379e6f7e15ea51f9500180fe4f892edffde088",
+  "originals": [
+    {
+      "archive_path": "data_for_our_MeG/edit_data/gptj_cf_edit.json",
+      "sha256": "dda379804da92a3f55dabf7b70619479b137d9ca92102cbf90401c73c7f38a53",
+      "bytes": 41121404
+    },
+    {
+      "archive_path": "data_for_our_MeG/edit_data/gptj_zsre_edit.json",
+      "sha256": "236e2bc315800d07773cb2dedd8b4435dd6974fc39588fa22b58f8b64f5e0958",
+      "bytes": 21865696
+    },
+    {
+      "archive_path": "data_for_our_MeG/edit_data/phi2_cf_edit.json",
+      "sha256": "34c9a0f9f65feda4fb618825ec59a35394f982bdf144fdfc0172a968b603c7c2",
+      "bytes": 41287967
+    },
+    {
+      "archive_path": "data_for_our_MeG/edit_data/phi2_zsre_edit.json",
+      "sha256": "100fa2b28e9ed97256cd19e680392f563caa245e03cad7b6a31b6a04cf6783f7",
+      "bytes": 20357962
+    },
+    {
+      "archive_path": "data_for_our_MeG/new_split_data/multi_counterfact_new_id.json",
+      "sha256": "f36ac1453742dae5481565982fdaefeadd74e5bca957ea4054e63d02c3969afc",
+      "bytes": 49980934
+    },
+    {
+      "archive_path": "data_for_our_MeG/new_split_data/zsre_for_bert_train.json",
+      "sha256": "438dc2f1c98aec85f828eaf95fed2f40c19d470a1cdb6723f9103aa8e304ec18",
+      "bytes": 3733310
+    },
+    {
+      "archive_path": "data_for_our_MeG/new_split_data/zsre_mend_eval_new.json",
+      "sha256": "aa7e3780ead75be8b45fcf06117ac253a07804e8c7e048ad3ca0704cb584e7c7",
+      "bytes": 10907819
+    },
+    {
+      "archive_path": "data_for_our_MeG/new_split_data/zsre_mend_eval_new_rephrase.json",
+      "sha256": "46be35aa7657366bf2bb6a71bcb16f716eca58ab384ac03c6cca170ab5131167",
+      "bytes": 22541146
+    },
+    {
+      "archive_path": "data_for_our_MeG/new_split_data/zsre_train_new.json",
+      "sha256": "326185f83eb381778ae0d498ca53e9dfa2d1d78b1ca9687c70adaf8c1984bc7a",
+      "bytes": 47938134
+    },
+    {
+      "archive_path": "data_for_our_MeG/raw_data/multi_counterfact.json",
+      "sha256": "977a6acce4705507b5fd6bfcea8f61cd78f9ed0f9cd9c9a6bcd6c8a3ed61c833",
+      "bytes": 42914741
+    },
+    {
+      "archive_path": "data_for_our_MeG/raw_data/rephrase.prompt",
+      "sha256": "707fd63436ee5d82642f6e9f6605d0eecd434a547345f5ad51881fe1a7d6e042",
+      "bytes": 2005
+    },
+    {
+      "archive_path": "data_for_our_MeG/raw_data/zsre_mend_eval.json",
+      "sha256": "2c3f9fc31810df14bf4cf2b3b5a9342d90cdbe6f6956762cce10e1905abb562c",
+      "bytes": 10333353
+    },
+    {
+      "archive_path": "data_for_our_MeG/raw_data/zsre_mend_train.json",
+      "sha256": "68a5bc2a0f2b33986c6d23c98a64bfd57571c79b0e9e471b8a638c2fea1ae0ef",
+      "bytes": 86173432
+    },
+    {
+      "archive_path": "data_for_our_MeG/raw_data/zsre_mend_train_10000.json",
+      "sha256": "640ec98a583fc79a1b9b526f83654a9932f483715fdcc382e5ea646766f9a432",
+      "bytes": 5277557
+    },
+    {
+      "archive_path": "data_for_our_MeG/train_familiar/cf_fake_id_class.json",
+      "sha256": "b1b60bbe3a311fd6c83bbe265fa07ceaa241e98df808b8f827a1cb434ad90dd0",
+      "bytes": 24171877
+    },
+    {
+      "archive_path": "data_for_our_MeG/train_familiar/zsre_gptj_fake_id_class.json",
+      "sha256": "eaaa4a4b0799efb9365814d83ca3e512d3bf7a5e887618f7208363b3c35e3606",
+      "bytes": 12345892
+    },
+    {
+      "archive_path": "data_for_our_MeG/train_familiar/zsre_phi2_fake_id_class.json",
+      "sha256": "2649173060b87de94c0f576df883ca4bc965dc7ab92449aba81100d4be412b56",
+      "bytes": 12071586
+    },
+    {
+      "archive_path": "data_for_our_MeG/README.md",
+      "sha256": "99d849156d58ccb1be0f01531dd9f58d570f8e6293706438e1a2f7d80b10461e",
+      "bytes": 1770
+    }
+  ],
+  "original_trained_checkpoints_present": false,
+  "source_provenance": "https://github.com/SemperSupra/model-mechanisms/actions/runs/43210713738",
+  "scientific_workset": "https://github.com/SemperSupra/model-mechanisms-private/issues/5",
+  "foundry_workset": "https://github.com/SemperSupra/model-artifact-foundry-private/issues/35",
+  "rights": {
+    "redistribution_rights_verified": false,
+    "source_local_inspection_only": true,
+    "public_oci_publication_allowed": false,
+    "private_acquisition_requires_review": true
+  },
+  "fulfillment": {
+    "downloaded_into_foundry": false,
+    "oci_manifest_created": false,
+    "consumer_hydration_allowed": false,
+    "approved": false
+  },
+  "note": "Original published data, not published author trained BERT/familiarity/neuron/diffusion checkpoints; no artifact bytes in repository"
+}
