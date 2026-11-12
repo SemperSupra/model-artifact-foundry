@@ -1,0 +1,287 @@
+{
+  "schema": "foundry.discovery.meg-iclr2026/v1",
+  "as_of": "2026-11-12",
+  "purpose": "metadata-only candidate location and evidence; NOT an approved source declaration or acquisition",
+  "research_authority": "https://github.com/SemperSupra/model-mechanisms-private/issues/1",
+  "foundry_authority": "https://github.com/SemperSupra/model-artifact-foundry-private/issues/35",
+  "upstream": {
+    "paper": "https://arxiv.org/abs/2512.14395",
+    "repo": "https://github.com/RodeWayne/MeG-for-Knowledge-Editing",
+    "commit": "9fa8ae10cf33c82dd2200057f70dfcb73388cd74",
+    "author_artifact_request": "https://github.com/RodeWayne/MeG-for-Knowledge-Editing/issues/1"
+  },
+  "global_search": {
+    "coverage": "targeted multilingual discovery in English, Chinese, Japanese, Korean, German, plus French/Russian-oriented queries; non-exhaustive across unindexed services",
+    "surfaces": [
+      "author GitHub and issue/releases",
+      "Hugging Face models/datasets",
+      "ROME/Bau Lab datasets",
+      "EasyEdit mirrors",
+      "ModelScope search",
+      "OpenReview metadata",
+      "Zenodo/figshare/Kaggle indexing",
+      "Chinese/Japanese/Korean research discussions"
+    ],
+    "author_outputs_verified_downloadable": 0
+  },
+  "artifact_records": [
+    {
+      "id": "meg/pretrained/phi2",
+      "type": "base-model",
+      "name": "microsoft/phi-2",
+      "source": "https://huggingface.co/microsoft/phi-2",
+      "provider": "huggingface",
+      "revision": "810d367871c1d460086d9f82db8696f2e0a0fcd0",
+      "status": "source_verified",
+      "license": "MIT",
+      "identity": "independent-public-upstream",
+      "disposition": "candidate-review-only",
+      "blocks": [
+        "transformers-safetensors-validator-not-admitted",
+        "file-hashes-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/pretrained/bert-base-uncased",
+      "type": "base-model",
+      "name": "bert-base-uncased",
+      "source": "https://huggingface.co/google-bert/bert-base-uncased",
+      "provider": "huggingface",
+      "revision": "86b5e0934494bd15c9632b12f734a8a67f723594",
+      "status": "source_verified",
+      "license": "Apache-2.0",
+      "identity": "independent-public-upstream",
+      "disposition": "candidate-review-only",
+      "blocks": [
+        "transformers-safetensors-validator-not-admitted",
+        "file-hashes-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/pretrained/glm-4-9b-chat",
+      "type": "rephrase-generator",
+      "name": "THUDM/glm-4-9b-chat",
+      "source": "https://huggingface.co/zai-org/glm-4-9b-chat",
+      "provider": "huggingface",
+      "revision": null,
+      "status": "source_verified",
+      "license": "custom-glm-4",
+      "identity": "compatible-model-not-paper-pinned",
+      "disposition": "hold-public-redistribution",
+      "blocks": [
+        "custom-license-review",
+        "historical-revision-unresolved",
+        "author-script-trust-remote-code"
+      ]
+    },
+    {
+      "id": "meg/raw/multi-counterfact",
+      "type": "raw-benchmark",
+      "name": "multi_counterfact.json",
+      "source": "https://rome.baulab.info/data/dsets/multi_counterfact.json",
+      "provider": "https",
+      "revision": null,
+      "status": "source_verified",
+      "license": null,
+      "identity": "original-benchmark-upstream",
+      "disposition": "hold-license-and-hash",
+      "blocks": [
+        "redistribution-rights-unverified",
+        "file-hash-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/raw/zsre-mend-eval",
+      "type": "raw-benchmark",
+      "name": "zsre_mend_eval.json",
+      "source": "https://rome.baulab.info/data/dsets/zsre_mend_eval.json",
+      "provider": "https",
+      "revision": null,
+      "status": "source_verified",
+      "license": null,
+      "identity": "original-benchmark-upstream",
+      "disposition": "hold-license-and-hash",
+      "blocks": [
+        "redistribution-rights-unverified",
+        "file-hash-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/raw/zsre-mend-train",
+      "type": "raw-benchmark",
+      "name": "zsre_mend_train.json",
+      "source": "https://rome.baulab.info/data/dsets/zsre_mend_train.json",
+      "provider": "https",
+      "revision": null,
+      "status": "source_verified",
+      "license": null,
+      "identity": "original-benchmark-upstream",
+      "disposition": "hold-license-and-hash",
+      "blocks": [
+        "redistribution-rights-unverified",
+        "file-hash-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/raw/zsre-mend-train-10000",
+      "type": "raw-benchmark",
+      "name": "zsre_mend_train_10000.json",
+      "source": "https://huggingface.co/datasets/wangzn2001/data/tree/0f3666b7646e47a44c636667b3aa6e18a04ea33b/data/zsre",
+      "provider": "huggingface",
+      "revision": "0f3666b7646e47a44c636667b3aa6e18a04ea33b",
+      "status": "source_verified",
+      "license": null,
+      "identity": "third-party-easyedit-derived-unconfirmed-author-byte-identity",
+      "disposition": "hold-license-and-identity",
+      "blocks": [
+        "dataset-license-unverified",
+        "author-input-hash-unknown",
+        "file-hash-not-yet-observed"
+      ]
+    },
+    {
+      "id": "meg/code/author-method",
+      "type": "author-code",
+      "name": "MeG-for-Knowledge-Editing",
+      "source": "https://github.com/RodeWayne/MeG-for-Knowledge-Editing",
+      "provider": "github",
+      "revision": "9fa8ae10cf33c82dd2200057f70dfcb73388cd74",
+      "status": "source_verified",
+      "license": null,
+      "identity": "official-author-source",
+      "disposition": "hold-redistribution",
+      "blocks": [
+        "no-repository-license-verified",
+        "do-not-vendor-or-execute-in-foundry"
+      ]
+    },
+    {
+      "id": "meg/derived/zsre-author-rephrases",
+      "type": "author-derived-dataset",
+      "name": "zsre_mend_eval_new_rephrase.json;zsre_for_bert_train.json",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "original-author-derivative-required",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "original-glm-generated-paraphrases-absent",
+        "prompt-file-get_rephrase.prompt-absent",
+        "non-deterministic-reconstruction"
+      ]
+    },
+    {
+      "id": "meg/derived/phi2-edit-data",
+      "type": "author-derived-dataset",
+      "name": "phi2_zsre_edit.json;phi2_cf_edit.json",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "original-phi2-prediction-filtered-data-required",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "original-edit-selection-not-published",
+        "model-revision-and-generation-state-unknown"
+      ]
+    },
+    {
+      "id": "meg/derived/familiarity-labels",
+      "type": "author-derived-dataset",
+      "name": "zsre_phi2_fake_id_class.json;cf_fake_id_class.json",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "random-class-labels-from-author-execution",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "author-generated-random-labels-unpublished",
+        "random-seed-not-set-in-file"
+      ]
+    },
+    {
+      "id": "meg/stage1/phi2-zsre-text-encoder",
+      "type": "author-checkpoint",
+      "name": "checkpoints_trained_bert/bert_phi2_zsre/model_epoch_100.pth",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "official-paper-trained-weights",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "author-checkpoint-unpublished",
+        "permission-and-hash-missing"
+      ]
+    },
+    {
+      "id": "meg/stage2/phi2-zsre-familiarity",
+      "type": "author-checkpoint",
+      "name": "Phi-2 ZsRE familiarity network checkpoint",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "official-paper-trained-weights",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "exact-output-filename-to-confirm",
+        "author-checkpoint-unpublished",
+        "permission-and-hash-missing"
+      ]
+    },
+    {
+      "id": "meg/stage3/phi2-zsre-teacher-neurons",
+      "type": "author-optimized-neurons",
+      "name": "data_paras/phi2_zsre_10000/paras;train_success_data_prompt_1_6_neuron_1_layer_29.json",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "official-paper-generated-neuron-data",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "author-optimized-neuron-data-unpublished",
+        "success-subset-order-unknown",
+        "permission-and-hash-missing"
+      ]
+    },
+    {
+      "id": "meg/stage4/phi2-zsre-diffusion",
+      "type": "author-checkpoint",
+      "name": "results/029_20250518224950/checkpoints/model_epoch_all_30000.pth",
+      "source": null,
+      "provider": null,
+      "revision": null,
+      "status": "unlocated",
+      "license": null,
+      "identity": "official-paper-trained-weights",
+      "disposition": "hold-unavailable",
+      "blocks": [
+        "author-checkpoint-unpublished",
+        "permission-and-hash-missing"
+      ]
+    }
+  ],
+  "foundry_policy": {
+    "source_discovery_only": true,
+    "bytes_acquired": false,
+    "oci_published": false,
+    "promoted": false,
+    "acquisition_requires": [
+      "exact upstream revision and file hashes",
+      "rights evidence and family validator",
+      "reviewed explicit promotion",
+      "digest-pinned consumer hydration"
+    ],
+    "published_original_meg_weights_verified": false
+  }
+}
