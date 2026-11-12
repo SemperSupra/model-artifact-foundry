@@ -1,0 +1,26 @@
+name: meg-iclr2026-discovery-contract
+
+on:
+  pull_request:
+    paths:
+      - "discovery/meg-iclr2026/**"
+      - "docs/discovery/meg-iclr2026-artifact-sweep.md"
+      - "tests/test_meg_discovery_inventory.py"
+      - ".github/workflows/meg-iclr2026-discovery-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-artifact-discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate metadata-only inventory without downloads, secrets or models
+        run: python3 -m unittest discover -s tests -p 'test_meg_discovery_inventory.py' -v
+      - name: Compile public source files only
+        run: python3 -m py_compile tests/test_meg_discovery_inventory.py
