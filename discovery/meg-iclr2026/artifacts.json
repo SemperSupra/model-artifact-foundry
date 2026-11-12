@@ -339,6 +339,31 @@
         "author-checkpoint-unpublished",
         "permission-and-hash-missing"
       ]
+    },
+    {
+      "id": "meg/derived/author-rephrase-prompt",
+      "type": "author-derived-dataset",
+      "name": "data_for_our_MeG/raw_data/rephrase.prompt",
+      "source": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+      "provider": "iclr-proceedings",
+      "revision": "sha256:d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+      "status": "source_verified",
+      "license": null,
+      "identity": "author-conference-supplement-file-sha-verified",
+      "disposition": "hold-license-review",
+      "files": [
+        {
+          "name": "rephrase.prompt",
+          "path": "data_for_our_MeG/raw_data/rephrase.prompt",
+          "sha256": "707fd63436ee5d82642f6e9f6605d0eecd434a547345f5ad51881fe1a7d6e042",
+          "bytes": 2005
+        }
+      ],
+      "blocks": [
+        "publisher_data_reuse_license_not_verified",
+        "not_yet_fetched_into_foundry",
+        "author-script-references-different-prompt-basename-get_rephrase.prompt"
+      ]
     }
   ],
   "foundry_policy": {
