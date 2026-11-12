@@ -22,7 +22,8 @@
       "Zenodo/figshare/Kaggle indexing",
       "Chinese/Japanese/Korean research discussions"
     ],
-    "author_outputs_verified_downloadable": 0
+    "author_outputs_verified_downloadable": 3,
+    "author_outputs_verified_scope": "three derived-dataset record groups: rephrases, Phi-2 edit selections, familiarity label datasets; no trained model checkpoints"
   },
   "artifact_records": [
     {
@@ -88,7 +89,14 @@
       "blocks": [
         "redistribution-rights-unverified",
         "file-hash-not-yet-observed"
-      ]
+      ],
+      "author_supplemental_source": {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+        "outer_sha256": "d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+        "path": "data_for_our_MeG/raw_data/multi_counterfact.json",
+        "sha256": "977a6acce4705507b5fd6bfcea8f61cd78f9ed0f9cd9c9a6bcd6c8a3ed61c833",
+        "bytes": 42914741
+      }
     },
     {
       "id": "meg/raw/zsre-mend-eval",
@@ -104,7 +112,14 @@
       "blocks": [
         "redistribution-rights-unverified",
         "file-hash-not-yet-observed"
-      ]
+      ],
+      "author_supplemental_source": {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+        "outer_sha256": "d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+        "path": "data_for_our_MeG/raw_data/zsre_mend_eval.json",
+        "sha256": "2c3f9fc31810df14bf4cf2b3b5a9342d90cdbe6f6956762cce10e1905abb562c",
+        "bytes": 10333353
+      }
     },
     {
       "id": "meg/raw/zsre-mend-train",
@@ -120,23 +135,37 @@
       "blocks": [
         "redistribution-rights-unverified",
         "file-hash-not-yet-observed"
-      ]
+      ],
+      "author_supplemental_source": {
+        "url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+        "outer_sha256": "d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+        "path": "data_for_our_MeG/raw_data/zsre_mend_train.json",
+        "sha256": "68a5bc2a0f2b33986c6d23c98a64bfd57571c79b0e9e471b8a638c2fea1ae0ef",
+        "bytes": 86173432
+      }
     },
     {
       "id": "meg/raw/zsre-mend-train-10000",
       "type": "raw-benchmark",
       "name": "zsre_mend_train_10000.json",
-      "source": "https://huggingface.co/datasets/wangzn2001/data/tree/0f3666b7646e47a44c636667b3aa6e18a04ea33b/data/zsre",
-      "provider": "huggingface",
-      "revision": "0f3666b7646e47a44c636667b3aa6e18a04ea33b",
+      "source": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+      "provider": "iclr-proceedings",
+      "revision": "sha256:d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
       "status": "source_verified",
       "license": null,
-      "identity": "third-party-easyedit-derived-unconfirmed-author-byte-identity",
-      "disposition": "hold-license-and-identity",
+      "identity": "author-conference-supplement-file-sha-verified",
+      "disposition": "hold-license-review",
       "blocks": [
-        "dataset-license-unverified",
-        "author-input-hash-unknown",
-        "file-hash-not-yet-observed"
+        "publisher_data_reuse_license_not_verified",
+        "not_yet_fetched_into_foundry"
+      ],
+      "files": [
+        {
+          "name": "zsre_mend_train_10000.json",
+          "path": "data_for_our_MeG/raw_data/zsre_mend_train_10000.json",
+          "sha256": "640ec98a583fc79a1b9b526f83654a9932f483715fdcc382e5ea646766f9a432",
+          "bytes": 5277557
+        }
       ]
     },
     {
@@ -159,49 +188,90 @@
       "id": "meg/derived/zsre-author-rephrases",
       "type": "author-derived-dataset",
       "name": "zsre_mend_eval_new_rephrase.json;zsre_for_bert_train.json",
-      "source": null,
-      "provider": null,
-      "revision": null,
-      "status": "unlocated",
+      "source": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+      "provider": "iclr-proceedings",
+      "revision": "sha256:d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+      "status": "source_verified",
       "license": null,
-      "identity": "original-author-derivative-required",
-      "disposition": "hold-unavailable",
+      "identity": "author-conference-supplement-file-sha-verified",
+      "disposition": "hold-license-review",
       "blocks": [
-        "original-glm-generated-paraphrases-absent",
-        "prompt-file-get_rephrase.prompt-absent",
-        "non-deterministic-reconstruction"
+        "publisher_data_reuse_license_not_verified",
+        "not_yet_fetched_into_foundry"
+      ],
+      "files": [
+        {
+          "name": "zsre_mend_eval_new_rephrase.json",
+          "path": "data_for_our_MeG/new_split_data/zsre_mend_eval_new_rephrase.json",
+          "sha256": "46be35aa7657366bf2bb6a71bcb16f716eca58ab384ac03c6cca170ab5131167",
+          "bytes": 22541146
+        },
+        {
+          "name": "zsre_for_bert_train.json",
+          "path": "data_for_our_MeG/new_split_data/zsre_for_bert_train.json",
+          "sha256": "438dc2f1c98aec85f828eaf95fed2f40c19d470a1cdb6723f9103aa8e304ec18",
+          "bytes": 3733310
+        }
       ]
     },
     {
       "id": "meg/derived/phi2-edit-data",
       "type": "author-derived-dataset",
       "name": "phi2_zsre_edit.json;phi2_cf_edit.json",
-      "source": null,
-      "provider": null,
-      "revision": null,
-      "status": "unlocated",
+      "source": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+      "provider": "iclr-proceedings",
+      "revision": "sha256:d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+      "status": "source_verified",
       "license": null,
-      "identity": "original-phi2-prediction-filtered-data-required",
-      "disposition": "hold-unavailable",
+      "identity": "author-conference-supplement-file-sha-verified",
+      "disposition": "hold-license-review",
       "blocks": [
-        "original-edit-selection-not-published",
-        "model-revision-and-generation-state-unknown"
+        "publisher_data_reuse_license_not_verified",
+        "not_yet_fetched_into_foundry"
+      ],
+      "files": [
+        {
+          "name": "phi2_zsre_edit.json",
+          "path": "data_for_our_MeG/edit_data/phi2_zsre_edit.json",
+          "sha256": "100fa2b28e9ed97256cd19e680392f563caa245e03cad7b6a31b6a04cf6783f7",
+          "bytes": 20357962
+        },
+        {
+          "name": "phi2_cf_edit.json",
+          "path": "data_for_our_MeG/edit_data/phi2_cf_edit.json",
+          "sha256": "34c9a0f9f65feda4fb618825ec59a35394f982bdf144fdfc0172a968b603c7c2",
+          "bytes": 41287967
+        }
       ]
     },
     {
       "id": "meg/derived/familiarity-labels",
       "type": "author-derived-dataset",
       "name": "zsre_phi2_fake_id_class.json;cf_fake_id_class.json",
-      "source": null,
-      "provider": null,
-      "revision": null,
-      "status": "unlocated",
+      "source": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+      "provider": "iclr-proceedings",
+      "revision": "sha256:d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+      "status": "source_verified",
       "license": null,
-      "identity": "random-class-labels-from-author-execution",
-      "disposition": "hold-unavailable",
+      "identity": "author-conference-supplement-file-sha-verified",
+      "disposition": "hold-license-review",
       "blocks": [
-        "author-generated-random-labels-unpublished",
-        "random-seed-not-set-in-file"
+        "publisher_data_reuse_license_not_verified",
+        "not_yet_fetched_into_foundry"
+      ],
+      "files": [
+        {
+          "name": "zsre_phi2_fake_id_class.json",
+          "path": "data_for_our_MeG/train_familiar/zsre_phi2_fake_id_class.json",
+          "sha256": "2649173060b87de94c0f576df883ca4bc965dc7ab92449aba81100d4be412b56",
+          "bytes": 12071586
+        },
+        {
+          "name": "cf_fake_id_class.json",
+          "path": "data_for_our_MeG/train_familiar/cf_fake_id_class.json",
+          "sha256": "b1b60bbe3a311fd6c83bbe265fa07ceaa241e98df808b8f827a1cb434ad90dd0",
+          "bytes": 24171877
+        }
       ]
     },
     {
@@ -283,5 +353,24 @@
       "digest-pinned consumer hydration"
     ],
     "published_original_meg_weights_verified": false
+  },
+  "official_iclr_supplement": {
+    "url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/7926a9c34166da5a6a681cc0fe6d8a28-Supplemental-Conference.zip",
+    "outer_sha256": "d8abdd06a77318d0af5f6f3414092eafe3b29a3fe10eb890704d6c237c760d71",
+    "compressed_bytes": 81010254,
+    "code_inner_sha256": "5b31e870127b90d2fa1a5281b58a29a16816cd59c022b22689dc597726632b9b",
+    "code_member_count": 63,
+    "data_inner_sha256": "10f0cad94529f9d1522a34dad9379e6f7e15ea51f9500180fe4f892edffde088",
+    "data_member_count": 18,
+    "data_uncompressed_bytes": 453026585,
+    "inspection_run": "https://github.com/SemperSupra/model-mechanisms/actions/runs/43210713738",
+    "status": "source_member_sha256_verified_without_public_redistribution",
+    "original_model_checkpoints_present": false,
+    "discovered_prompt": {
+      "name": "data_for_our_MeG/raw_data/rephrase.prompt",
+      "sha256": "707fd63436ee5d82642f6e9f6605d0eecd434a547345f5ad51881fe1a7d6e042",
+      "bytes": 2005
+    },
+    "author_data_file_hashes_verified": true
   }
 }
