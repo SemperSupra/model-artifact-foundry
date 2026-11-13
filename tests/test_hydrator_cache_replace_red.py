@@ -108,6 +108,30 @@ class CacheReplacementRed(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "(size mismatch|hash mismatch)"):
             self.hydrator.hydrate(self.catalog, self.logical_id, self.cache, "oras")
 
+    def symlink_selected_payload_outside_cache(self):
+        first = self.hydrate()
+        member = first / "weights.bin"
+        outside = self.root / "external-synthetic.bin"
+        shutil.copy2(member, outside)
+        member.unlink()
+        member.symlink_to(outside)
+        self.assertTrue(member.is_symlink())
+        self.assertEqual(member.read_bytes(), outside.read_bytes())
+        return first
+
+    def test_red_verified_warm_cache_rejects_external_symlink_member(self):
+        first = self.symlink_selected_payload_outside_cache()
+        with self.assertRaisesRegex(RuntimeError, "(symlink|non-regular)"):
+            self.hydrator.hydrate(self.catalog, self.logical_id, self.cache, "oras")
+        self.assertTrue((first / "weights.bin").is_symlink())
+
+    def test_red_marker_repair_rejects_external_symlink_member(self):
+        first = self.symlink_selected_payload_outside_cache()
+        (first.parent / ".verified.json").unlink()
+        with self.assertRaisesRegex(RuntimeError, "(symlink|non-regular)"):
+            self.hydrate()
+        self.assertFalse((first.parent / ".verified.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
