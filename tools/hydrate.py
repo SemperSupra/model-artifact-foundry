@@ -59,8 +59,16 @@ def safe_extract(archive: Path, dest: Path, expected_names: set[str]) -> None:
 
 
 def verify_model_dir(model_dir: Path, manifest: dict) -> None:
+    # OCI model archives contain only regular members. A symlinked cache
+    # member could redirect verified bytes outside the immutable digest path.
+    if model_dir.is_symlink() or not model_dir.is_dir():
+        raise RuntimeError("symlinked or missing model directory")
+    members = list(model_dir.iterdir())
+    for member in members:
+        if member.is_symlink() or not member.is_file():
+            raise RuntimeError(f"symlinked or non-regular model member: {member.name}")
     expected = {entry["path"]: entry for entry in manifest["files"]}
-    actual = {p.name for p in model_dir.iterdir() if p.is_file()}
+    actual = {p.name for p in members}
     if actual != set(expected):
         raise RuntimeError(f"model directory file set mismatch: {sorted(actual)}")
     for name, entry in expected.items():
