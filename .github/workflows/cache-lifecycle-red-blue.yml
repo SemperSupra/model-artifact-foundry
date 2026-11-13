@@ -1,0 +1,31 @@
+name: MAF cache lifecycle RED BLUE (original synthetic offline)
+
+on:
+  pull_request:
+    paths:
+      - 'tests/test_hydrator_cache_replace_red.py'
+      - 'tools/hydrate.py'
+      - '.github/workflows/cache-lifecycle-red-blue.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cache-lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Offline warm-hit and corruption controls
+        run: |
+          python3 -m unittest discover -s tests -p test_hydrator_cache_replace_red.py -k test_control -v
+      - name: Offline Python stdlib cache RED failure oracle
+        run: |
+          python3 -m unittest discover -s tests -p test_hydrator_cache_replace_red.py -k test_red -v
+      - name: Metadata-only no-network contract
+        if: always()
+        run: echo 'Fake ORAS and tiny synthetic bytes only. No credentials, OCI publishing, or private assets.'
