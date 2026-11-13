@@ -67,6 +67,11 @@ def verify_model_dir(model_dir: Path, manifest: dict) -> None:
     for member in members:
         if member.is_symlink() or not member.is_file():
             raise RuntimeError(f"symlinked or non-regular model member: {member.name}")
+        # These model members were extracted as ordinary single-link files.
+        # A hardlinked inode can be changed through an external pathname even
+        # when the cache member's current hash still matches the manifest.
+        if member.stat().st_nlink != 1:
+            raise RuntimeError(f"hardlinked model member outside immutable cache custody: {member.name}")
     expected = {entry["path"]: entry for entry in manifest["files"]}
     actual = {p.name for p in members}
     if actual != set(expected):
