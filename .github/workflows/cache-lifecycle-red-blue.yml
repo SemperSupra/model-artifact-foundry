@@ -20,9 +20,12 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Offline Python stdlib cache failure oracle
+      - name: Offline warm-hit and corruption controls
         run: |
-          python3 -m unittest discover -s tests -p test_hydrator_cache_replace_red.py -v
+          python3 -m unittest discover -s tests -p test_hydrator_cache_replace_red.py -k test_control -v
+      - name: Offline Python stdlib cache RED failure oracle
+        run: |
+          python3 -m unittest discover -s tests -p test_hydrator_cache_replace_red.py -k test_red -v
       - name: Metadata-only no-network contract
         if: always()
         run: echo 'Fake ORAS and tiny synthetic bytes only. No credentials, OCI publishing, or private assets.'
