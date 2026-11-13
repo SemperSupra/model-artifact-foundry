@@ -265,9 +265,27 @@ def hydrate(
         )
 
         final_dir.parent.mkdir(parents=True, exist_ok=True)
+        if final_dir.is_symlink():
+            raise RuntimeError("refusing symlinked content-addressed cache destination")
         if final_dir.exists():
-            shutil.rmtree(final_dir)
-        os.replace(extracted, final_dir)
+            # A selected digest path must never be deleted and recreated while
+            # consumers may still have directory/file handles to its contents.
+            # If only the marker was lost, reverify existing bytes against
+            # the freshly pulled digest-pinned manifest and restore the marker.
+            existing_manifest = final_dir / "bundle-manifest.json"
+            if existing_manifest.is_symlink() or not existing_manifest.is_file():
+                raise RuntimeError("existing digest directory has no trustworthy manifest")
+            if json.loads(existing_manifest.read_text(encoding="utf-8")) != manifest:
+                raise RuntimeError("existing digest directory conflicts with approved artifact")
+            verify_model_dir(final_dir / "model", manifest)
+            atomic_write_json(
+                final_dir / ".verified.json",
+                json.loads((extracted / ".verified.json").read_text(encoding="utf-8")),
+            )
+        else:
+            # Concurrent installers may safely race here: os.replace cannot
+            # overwrite an already non-empty directory. A loser fails closed.
+            os.replace(extracted, final_dir)
         model_dir = final_dir / "model"
         apply_compatibility_projection(
             cache_root=cache_root,
