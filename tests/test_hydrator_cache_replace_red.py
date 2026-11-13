@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -130,6 +131,33 @@ class CacheReplacementRed(unittest.TestCase):
         (first.parent / ".verified.json").unlink()
         with self.assertRaisesRegex(RuntimeError, "(symlink|non-regular)"):
             self.hydrate()
+        self.assertFalse((first.parent / ".verified.json").exists())
+
+    def hardlink_selected_payload_outside_cache(self):
+        first = self.hydrate()
+        member = first / "weights.bin"
+        external = self.root / "external-original-synthetic.bin"
+        shutil.copy2(member, external)
+        member.unlink()
+        os.link(external, member)
+        self.assertFalse(member.is_symlink())
+        self.assertGreater(member.stat().st_nlink, 1)
+        self.assertEqual(member.read_bytes(), external.read_bytes())
+        return first, external
+
+    def test_red_verified_warm_cache_rejects_external_hardlinked_member(self):
+        first, external = self.hardlink_selected_payload_outside_cache()
+        with self.assertRaisesRegex(RuntimeError, "(hardlink|non-regular)"):
+            self.hydrator.hydrate(self.catalog, self.logical_id, self.cache, "oras")
+        self.assertTrue(external.is_file())
+        self.assertTrue((first / "weights.bin").is_file())
+
+    def test_red_marker_repair_rejects_external_hardlinked_member(self):
+        first, external = self.hardlink_selected_payload_outside_cache()
+        (first.parent / ".verified.json").unlink()
+        with self.assertRaisesRegex(RuntimeError, "(hardlink|non-regular)"):
+            self.hydrate()
+        self.assertTrue(external.is_file())
         self.assertFalse((first.parent / ".verified.json").exists())
 
 
