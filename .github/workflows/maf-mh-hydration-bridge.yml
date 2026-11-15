@@ -1,0 +1,65 @@
+name: MAF real MakeHuman stage-to-hydrator cross-branch proof
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-mh-hydration-bridge.yml'
+      - 'research/makehuman-hydration-bridge/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: maf-mh-bridge-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+jobs:
+  cross-branch-public-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Lock source staging and hydrator upstream Git revisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage_sha=04434baa1b4c6d858beb140ec33acc948877bf43
+          hydrator_sha=8f14e4179e9333ebf2eef2c26c7e74a3bc5608f1
+          git merge-base --is-ancestor "$stage_sha" HEAD
+          git fetch --no-tags --depth=1 origin "$hydrator_sha"
+          test "$(git rev-parse FETCH_HEAD)" = "$hydrator_sha"
+          mkdir -p "$RUNNER_TEMP/mh-bridge/modules"
+          git show "$hydrator_sha:tools/hydrate.py" > "$RUNNER_TEMP/mh-bridge/modules/hydrate.py"
+          test -s "$RUNNER_TEMP/mh-bridge/modules/hydrate.py"
+          python3 -m py_compile "$RUNNER_TEMP/mh-bridge/modules/hydrate.py"
+      - name: Source-verified actual CC0 publisher ZIP to disposable stage only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mh-bridge/bytes" "$RUNNER_TEMP/mh-bridge/stage"
+          cd tools/maf-acquire
+          go test -race -count=1 ./makehuman
+          go run ./cmd/makehuman-pinned-source "$RUNNER_TEMP/mh-bridge/bytes" \
+            > "$RUNNER_TEMP/mh-bridge/fetch.json"
+          go run ./cmd/makehuman-zip-stage \
+            -archive "$RUNNER_TEMP/mh-bridge/bytes/visemes01.zip" \
+            -stage-parent "$RUNNER_TEMP/mh-bridge/stage" \
+            > "$RUNNER_TEMP/mh-bridge/stage-local.json"
+      - name: Verify true staged ZIP with exact generic MAF nested verifier and negatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 research/makehuman-hydration-bridge/run.py \
+            --fetch "$RUNNER_TEMP/mh-bridge/fetch.json" \
+            --stage "$RUNNER_TEMP/mh-bridge/stage-local.json" \
+            --verifier "$RUNNER_TEMP/mh-bridge/modules/hydrate.py" \
+            --workspace "$RUNNER_TEMP/mh-bridge" \
+            --receipt "$RUNNER_TEMP/mh-bridge/receipt.json"
+      - name: Upload short-retention metadata-only evidence, never asset source files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-mh-cross-branch-generic-hydration-proof
+          path: ${{ runner.temp }}/mh-bridge/receipt.json
+          if-no-files-found: ignore
+          retention-days: 3
