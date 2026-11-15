@@ -58,29 +58,77 @@ def safe_extract(archive: Path, dest: Path, expected_names: set[str]) -> None:
         tf.extractall(dest)
 
 
+def _safe_manifest_member(name: object) -> bool:
+    # Keep entries portable to Windows and fail closed on path normalization,
+    # traversal and case/drive aliases before reading artifact bytes.
+    return (
+        isinstance(name, str)
+        and bool(name)
+        and not name.startswith("/")
+        and not name.endswith("/")
+        and all(part not in {"", ".", ".."} for part in name.split("/"))
+        and all(ch not in name for ch in ("\\", ":", "\x00", "\r", "\n"))
+    )
+
+
 def verify_model_dir(model_dir: Path, manifest: dict) -> None:
-    # OCI model archives contain only regular members. A symlinked cache
-    # member could redirect verified bytes outside the immutable digest path.
+    # Verified Foundry cache members may be nested (e.g. MakeHuman targets,
+    # rig definitions, textures). Recheck every descendant and every parent
+    # rather than assuming a flat model directory. Prior symlink and hardlink
+    # fail-closed custody rules apply recursively.
     if model_dir.is_symlink() or not model_dir.is_dir():
         raise RuntimeError("symlinked or missing model directory")
-    members = list(model_dir.iterdir())
-    for member in members:
-        if member.is_symlink() or not member.is_file():
-            raise RuntimeError(f"symlinked or non-regular model member: {member.name}")
-        # These model members were extracted as ordinary single-link files.
-        # A hardlinked inode can be changed through an external pathname even
-        # when the cache member's current hash still matches the manifest.
-        if member.stat().st_nlink != 1:
-            raise RuntimeError(f"hardlinked model member outside immutable cache custody: {member.name}")
-    expected = {entry["path"]: entry for entry in manifest["files"]}
-    actual = {p.name for p in members}
+    records = manifest.get("files")
+    if not isinstance(records, list) or not records:
+        raise RuntimeError("invalid or empty artifact file manifest")
+    expected = {}
+    aliases = set()
+    expected_dirs = set()
+    for entry in records:
+        if not isinstance(entry, dict):
+            raise RuntimeError("invalid artifact file record")
+        name = entry.get("path")
+        if not _safe_manifest_member(name):
+            raise RuntimeError(f"unsafe artifact path in manifest: {name!r}")
+        if name in expected or name.casefold() in aliases:
+            raise RuntimeError(f"duplicate or portable-case-alias artifact path: {name}")
+        if not isinstance(entry.get("size_bytes"), int) or entry["size_bytes"] < 0:
+            raise RuntimeError(f"invalid artifact size: {name}")
+        digest = entry.get("sha256")
+        if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise RuntimeError(f"invalid artifact hash: {name}")
+        aliases.add(name.casefold())
+        expected[name] = entry
+        parts = name.split("/")
+        for index in range(1, len(parts)):
+            expected_dirs.add("/".join(parts[:index]))
+    actual = set()
+    actual_dirs = set()
+    for dirpath, dirnames, filenames in os.walk(model_dir, followlinks=False):
+        current = Path(dirpath)
+        for dirname in dirnames:
+            child = current / dirname
+            rel = child.relative_to(model_dir).as_posix()
+            if child.is_symlink() or not child.is_dir():
+                raise RuntimeError(f"symlinked or non-directory artifact parent: {rel}")
+            actual_dirs.add(rel)
+        for filename in filenames:
+            member = current / filename
+            rel = member.relative_to(model_dir).as_posix()
+            if member.is_symlink() or not member.is_file():
+                raise RuntimeError(f"symlinked or non-regular model member: {rel}")
+            if member.stat().st_nlink != 1:
+                raise RuntimeError(f"hardlinked model member outside immutable cache custody: {rel}")
+            actual.add(rel)
     if actual != set(expected):
-        raise RuntimeError(f"model directory file set mismatch: {sorted(actual)}")
+        raise RuntimeError(f"model directory file set mismatch: missing={sorted(set(expected)-actual)}, extra={sorted(actual-set(expected))}")
+    if actual_dirs != expected_dirs:
+        raise RuntimeError(f"model directory parent set mismatch: missing={sorted(expected_dirs-actual_dirs)}, extra={sorted(actual_dirs-expected_dirs)}")
     for name, entry in expected.items():
-        p = model_dir / name
-        if p.stat().st_size != entry["size_bytes"]:
+        member = model_dir.joinpath(*name.split("/"))
+        if member.stat().st_size != entry["size_bytes"]:
             raise RuntimeError(f"size mismatch for {name}")
-        if sha256_file(p) != entry["sha256"]:
+        if sha256_file(member) != entry["sha256"]:
             raise RuntimeError(f"hash mismatch for {name}")
 
 
@@ -155,7 +203,8 @@ def materialize_hf_cache_projection(
             for name in sorted(expected):
                 source = (model_dir / name).resolve()
                 target = tmp_snapshot / name
-                target.symlink_to(os.path.relpath(source, start=tmp_snapshot))
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(os.path.relpath(source, start=target.parent))
             if snapshot.exists() or snapshot.is_symlink():
                 if snapshot.is_dir() and not snapshot.is_symlink():
                     shutil.rmtree(snapshot)
