@@ -1,0 +1,63 @@
+name: MAF MakeHuman archive transport observation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-makehuman-catalog-probe.yml'
+      - 'tools/maf-acquire/makehuman/**'
+      - 'tools/maf-acquire/cmd/makehuman-catalog/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  catalog-transport:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Bound primary-source catalog retrieval; record SHA and type distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/maf-makehuman"
+          curl --fail --location --silent --show-error \
+            --connect-timeout 15 --max-time 90 --retry 1 --max-filesize 67108864 \
+            -H 'Accept: application/json' \
+            'https://files.makehumancommunity.org/sites/default/files/assets.json' \
+            -o "$RUNNER_TEMP/maf-makehuman/assets.json"
+          test -s "$RUNNER_TEMP/maf-makehuman/assets.json"
+          test "$(wc -c < "$RUNNER_TEMP/maf-makehuman/assets.json")" -le 67108864
+          sha256sum "$RUNNER_TEMP/maf-makehuman/assets.json"
+          cd tools/maf-acquire
+          go run ./cmd/makehuman-catalog \
+            -catalog "$RUNNER_TEMP/maf-makehuman/assets.json" -license CC0 \
+            > "$RUNNER_TEMP/maf-makehuman/filtered.json"
+          python3 - <<'PY'
+          import json, hashlib, os
+          from collections import Counter
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"maf-makehuman"
+          raw=(p/"assets.json").read_bytes()
+          info=json.loads((p/"filtered.json").read_text())
+          rows=info["assets"]
+          receipt={
+            "status":"DISCOVERY_ONLY_NOT_DOWNLOADED",
+            "foundry_status":"NOT_ADOPTED",
+            "url":"https://files.makehumancommunity.org/sites/default/files/assets.json",
+            "catalog_sha256":hashlib.sha256(raw).hexdigest(),
+            "catalog_bytes":len(raw),
+            "cc0_asset_count":info["count"],
+            "cc0_type_counts":dict(sorted(Counter(a["type"] for a in rows).items())),
+            "sample_assets":[{"id":a["id"],"title":a["title"],"license":a["license"],"type":a["type"]} for a in rows[:6]],
+            "limitations":["Catalog URL is not immutable","No individual asset downloaded","No upstream file digests or license rights independently admitted","No Foundry identity or consumer hydration"]
+          }
+          (p/"catalog-receipt.json").write_text(json.dumps(receipt,indent=2)+"\n")
+          print("MAF_MAKEHUMAN_CATALOG_RECEIPT",json.dumps(receipt,sort_keys=True))
+          PY
+      - name: Upload metadata-only discovery receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-makehuman-catalog-public-receipt
+          path: ${{ runner.temp }}/maf-makehuman/catalog-receipt.json
+          if-no-files-found: ignore
+          retention-days: 3
