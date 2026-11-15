@@ -19,10 +19,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/maf-pinned-source"
+          mkdir -p "$RUNNER_TEMP/maf-pinned-source/bytes"
           cd tools/maf-acquire
           go run ./cmd/makehuman-pinned-source \
-            "$RUNNER_TEMP/maf-pinned-source" \
+            "$RUNNER_TEMP/maf-pinned-source/bytes" \
             > "$RUNNER_TEMP/maf-pinned-source/receipt.json"
           python3 - <<'PY'
           import json,os
