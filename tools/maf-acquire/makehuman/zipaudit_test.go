@@ -68,6 +68,7 @@ func TestZIPAuditLimitsAndCRC(t *testing.T){
  limits=DefaultZIPLimits()
  limits.MaxMembers=0
  if _,e:=check(t,b,limits);e==nil {t.Fatal("failed to enforce member count")}
+ limits=DefaultZIPLimits()
  corrupt:=append([]byte(nil),b...)
  idx:=bytes.Index(corrupt,[]byte("1234567890"))
  if idx<0{t.Fatal("fixture body missing")}
