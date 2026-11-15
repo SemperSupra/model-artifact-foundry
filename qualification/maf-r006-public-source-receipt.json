@@ -1,0 +1,35 @@
+{
+  "files": {
+    ".github/workflows/maf-r006-source-admission.yml": {
+      "sha256": "3a453508e520b125cd7d3cd458d526175394176d5f55473b02084f4d1ba4fa2b",
+      "size": 670
+    },
+    "acquire/acquire.go": {
+      "sha256": "ba1216056d7b29eb23dcfd28fb966b4f14bf56b272f6cdfcbbb44e422c246871",
+      "size": 10708
+    },
+    "acquire/acquire_test.go": {
+      "sha256": "4eb03dc1754ad7aeb1473cc0a7304c524b194ce6d5c1bfde5eaea9b54d915cd9",
+      "size": 5745
+    },
+    "docs/MAF-R006-ACQUISITION-AND-MULTILINGUAL-NLP.md": {
+      "sha256": "3cf40e4232150ef78d93b5a5b734167a42c3d1e505f729170b8a818b4563f638",
+      "size": 8772
+    },
+    "go.mod": {
+      "sha256": "0951cb086f1e892a1aa58ed9a62af25bf7aee2227e3b3cad4a0b74910db9ba43",
+      "size": 80
+    },
+    "main.go": {
+      "sha256": "9d2a8520d157bfa59e65c93a680645ab221b543413622eb32d83c68772353038",
+      "size": 1272
+    }
+  },
+  "kind": "MAF-R006-PUBLIC-SOURCE-ONLY",
+  "language_models": "NOT_ACQUIRED",
+  "local_go": "go version go1.23.2 linux/amd64",
+  "network_downloads": "NOT_RUN",
+  "public_GHA": "NOT_RUN",
+  "repo_head": "PENDING_COMMIT",
+  "tests": "19/19 synthetic passed; race and vet passed"
+}
