@@ -143,7 +143,7 @@ class NestedArtifactHydrationTests(unittest.TestCase):
             self.assertEqual((output / "targets/visemes/ah.target").read_bytes(),
                              b"0 0.01 0.02 0.03\n")
             with self.assertRaisesRegex(RuntimeError, "hash mismatch"):
-                (root / "targets/visemes/ah.target").write_bytes(b"tampered")
+                (root / "targets/visemes/ah.target").write_bytes(b"9 0.01 0.02 0.03\n")
                 hydrate.verify_model_dir(root, manifest)
 
 
