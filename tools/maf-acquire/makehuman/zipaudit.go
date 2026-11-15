@@ -1,0 +1,122 @@
+// Package makehuman contains bounded, research-only source inspection helpers.
+package makehuman
+
+import (
+ "archive/zip"
+ "crypto/sha256"
+ "encoding/hex"
+ "errors"
+ "fmt"
+ "io"
+ "os"
+ "path"
+ "sort"
+ "strings"
+ "unicode/utf8"
+)
+
+type ZIPLimits struct {
+ MaxArchiveBytes int64
+ MaxMembers int
+ MaxMemberBytes int64
+ MaxTotalBytes int64
+}
+func DefaultZIPLimits() ZIPLimits {
+ return ZIPLimits{MaxArchiveBytes:1<<30, MaxMembers:8192, MaxMemberBytes:1<<30, MaxTotalBytes:4<<30}
+}
+type ZIPMember struct {
+ Path string `json:"path"`
+ Bytes int64 `json:"bytes"`
+ SHA256 string `json:"sha256"`
+}
+type ZIPReceipt struct {
+ Status string `json:"status"`
+ ArchiveBytes int64 `json:"archive_bytes"`
+ ArchiveSHA256 string `json:"archive_sha256"`
+ TotalUnpackedBytes int64 `json:"total_unpacked_bytes"`
+ Members []ZIPMember `json:"members"`
+ FoundryStatus string `json:"foundry_status"`
+}
+func safeZIPPath(raw string) bool {
+ if raw=="" || !utf8.ValidString(raw) || strings.ContainsAny(raw, string([]rune{92, 58, 0, 13, 10})) || strings.HasPrefix(raw, "/") {
+  return false
+ }
+ n:=strings.TrimSuffix(raw,"/")
+ if n=="" || n=="." || n==".." || path.Clean(n)!=n || strings.HasPrefix(n,"../") || strings.Contains(n,"//") {
+  return false
+ }
+ return true
+}
+// AuditZIP verifies bounded ZIP contents without extracting or executing assets.
+// ZIP CRC and SHA256 are byte-integrity witnesses, NOT upstream license,
+// cryptographic publisher authenticity, immutable Foundry identities, or approval.
+func AuditZIP(r io.ReaderAt, archiveBytes int64, limits ZIPLimits) (ZIPReceipt,error) {
+ if archiveBytes<=0 || limits.MaxArchiveBytes<=0 || archiveBytes>limits.MaxArchiveBytes ||
+  limits.MaxMembers<1 || limits.MaxMemberBytes<1 || limits.MaxTotalBytes<1 {
+  return ZIPReceipt{},errors.New("ZIP input or resource budget invalid")
+ }
+ z,e:=zip.NewReader(r,archiveBytes)
+ if e!=nil {return ZIPReceipt{},fmt.Errorf("ZIP header: %w",e)}
+ if len(z.File)==0 || len(z.File)>limits.MaxMembers {
+  return ZIPReceipt{},errors.New("ZIP member-count budget exceeded or archive empty")
+ }
+ h:=sha256.New()
+ if _,e:=io.Copy(h,io.NewSectionReader(r,0,archiveBytes));e!=nil{return ZIPReceipt{},e}
+ out:=ZIPReceipt{
+  Status:"ZIP_CRC_AND_SHA256_VERIFIED_NOT_APPROVED",
+  FoundryStatus:"NOT_ADOPTED",
+  ArchiveBytes:archiveBytes,
+  ArchiveSHA256:hex.EncodeToString(h.Sum(nil)),
+  Members:make([]ZIPMember,0,len(z.File)),
+ }
+ seen:=make(map[string]bool,len(z.File))
+ files:=make(map[string]bool,len(z.File))
+ var total int64
+ for _,f:=range z.File {
+  if !safeZIPPath(f.Name) {return ZIPReceipt{},fmt.Errorf("unsafe ZIP member name: %q",f.Name)}
+  norm:=strings.ToLower(strings.TrimSuffix(f.Name,"/"))
+  if seen[norm] {return ZIPReceipt{},fmt.Errorf("duplicate/case-alias ZIP path: %q",f.Name)}
+  seen[norm]=true
+  if f.Flags&1 != 0 {return ZIPReceipt{},fmt.Errorf("encrypted ZIP member: %q",f.Name)}
+  mode:=f.Mode()
+  if mode&os.ModeSymlink!=0 || (!mode.IsRegular() && !mode.IsDir()) {
+   return ZIPReceipt{},fmt.Errorf("ZIP nonregular/symlink member: %q",f.Name)
+  }
+  isDir:=strings.HasSuffix(f.Name,"/")
+  if isDir {
+   if !mode.IsDir() {return ZIPReceipt{},fmt.Errorf("ZIP directory mode mismatch: %q",f.Name)}
+   continue
+  }
+  if mode.IsDir() {return ZIPReceipt{},fmt.Errorf("ZIP regular-file mode mismatch: %q",f.Name)}
+  if f.Method!=zip.Store && f.Method!=zip.Deflate {
+   return ZIPReceipt{},fmt.Errorf("unsupported ZIP compression for %q",f.Name)
+  }
+  if f.UncompressedSize64>uint64(limits.MaxMemberBytes) || f.UncompressedSize64>uint64(limits.MaxTotalBytes-total) {
+   return ZIPReceipt{},fmt.Errorf("ZIP uncompressed byte budget exceeded: %q",f.Name)
+  }
+  rc,e:=f.Open()
+  if e!=nil {return ZIPReceipt{},fmt.Errorf("open ZIP member %q: %w",f.Name,e)}
+  memberHash:=sha256.New()
+  n,readErr:=io.Copy(memberHash,io.LimitReader(rc,limits.MaxMemberBytes+1))
+  closeErr:=rc.Close()
+  if readErr!=nil {return ZIPReceipt{},fmt.Errorf("ZIP CRC/stream for %q: %w",f.Name,readErr)}
+  if closeErr!=nil {return ZIPReceipt{},fmt.Errorf("ZIP stream close for %q: %w",f.Name,closeErr)}
+  if n<0 || n>limits.MaxMemberBytes || uint64(n)!=f.UncompressedSize64 {
+   return ZIPReceipt{},fmt.Errorf("ZIP member length mismatch: %q",f.Name)
+  }
+  files[norm]=true
+  total+=n
+  out.Members=append(out.Members,ZIPMember{Path:f.Name,Bytes:n,SHA256:hex.EncodeToString(memberHash.Sum(nil))})
+ }
+ for full:=range files {
+  p:=path.Dir(full)
+  for p!="." && p!="/" {
+   if files[p] {return ZIPReceipt{},fmt.Errorf("ZIP parent regular-file collision: %s",full)}
+   p=path.Dir(p)
+  }
+ }
+ if len(out.Members)==0 {return ZIPReceipt{},errors.New("ZIP contains no regular files")}
+ sort.Slice(out.Members,func(i,j int)bool{return out.Members[i].Path<out.Members[j].Path})
+ out.TotalUnpackedBytes=total
+ return out,nil
+}

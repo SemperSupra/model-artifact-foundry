@@ -1,0 +1,64 @@
+name: MAF MakeHuman small-pack read-only qualification
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-makehuman-pack-probe.yml'
+      - 'tools/maf-acquire/makehuman/**'
+      - 'tools/maf-acquire/cmd/makehuman-zip-audit/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  zip-safety-and-public-source-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Source-only adversarial ZIP tests on real Go stdlib
+        working-directory: tools/maf-acquire
+        run: |
+          set -euo pipefail
+          go test -race -count=1 ./makehuman
+          go vet ./makehuman ./cmd/makehuman-zip-audit
+      - name: Bounded live CC0 Visemes01 source-probe (not adoption)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/makehuman-zip"
+          curl --fail --location --silent --show-error \
+            --connect-timeout 15 --max-time 90 --retry 1 --max-filesize 8388608 \
+            'https://files.makehumancommunity.org/functional/visemes01.zip' \
+            -o "$RUNNER_TEMP/makehuman-zip/visemes01.zip"
+          test -s "$RUNNER_TEMP/makehuman-zip/visemes01.zip"
+          test "$(wc -c < "$RUNNER_TEMP/makehuman-zip/visemes01.zip")" -lt 8388608
+          sha256sum "$RUNNER_TEMP/makehuman-zip/visemes01.zip"
+          cd tools/maf-acquire
+          go run ./cmd/makehuman-zip-audit \
+            -archive "$RUNNER_TEMP/makehuman-zip/visemes01.zip" \
+            > "$RUNNER_TEMP/makehuman-zip/raw-receipt.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"makehuman-zip"
+          r=json.loads((p/"raw-receipt.json").read_text())
+          summary={
+           "status":r["status"], "foundry_status":r["foundry_status"],
+           "source_url":"https://files.makehumancommunity.org/functional/visemes01.zip",
+           "archive_sha256":r["archive_sha256"],
+           "archive_bytes":r["archive_bytes"],
+           "member_count":len(r["members"]),
+           "total_unpacked_bytes":r["total_unpacked_bytes"],
+           "sample_member_hashes":r["members"][:4],
+           "limitations":["No independently pre-pinned publisher hash","Archive headers and CRC are not license or authenticity proof","No extraction or installation","No Foundry approval or Drive transfer"]
+          }
+          (p/"summary-receipt.json").write_text(json.dumps(summary,indent=2)+"\n")
+          print("MAF_MAKEHUMAN_SMALL_PACK_RECEIPT",json.dumps(summary,sort_keys=True))
+          PY
+      - name: Short-retention metadata-only witness
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-makehuman-small-pack-receipt
+          path: ${{ runner.temp }}/makehuman-zip/summary-receipt.json
+          if-no-files-found: ignore
+          retention-days: 3
