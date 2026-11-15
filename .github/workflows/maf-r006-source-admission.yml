@@ -1,0 +1,23 @@
+name: MAF public source admission tests (R006)
+on:
+  pull_request:
+    paths:
+      - 'tools/maf-acquire/**'
+      - '.github/workflows/maf-r006-source-admission.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify installed Go toolchain
+        run: go version
+      - name: Offline fail-closed Go unit tests (no network or model download)
+        working-directory: tools/maf-acquire
+        run: |
+          go test ./...
+          go test -race ./...
+          go vet ./...
