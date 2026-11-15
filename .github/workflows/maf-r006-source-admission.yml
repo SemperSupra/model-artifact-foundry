@@ -21,3 +21,22 @@ jobs:
           go test ./...
           go test -race ./...
           go vet ./...
+  public-hf-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Public exact-revision single-file HF transfer smoke (not a model)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check 'huggingface_hub==1.19.0'
+          mkdir -p "$RUNNER_TEMP/hf-public-transport"
+          hf download 'sshleifer/tiny-gpt2' config.json \
+            --revision '5f91d94bd9cd7190a9f3216ff93cd1dd95f2c7be' \
+            --local-dir "$RUNNER_TEMP/hf-public-transport"
+          file="$RUNNER_TEMP/hf-public-transport/config.json"
+          test -s "$file"
+          test "$(wc -c < "$file")" -lt 2048
+          sha256sum "$file"
+          python3 -c 'import json,os; p=os.environ["RUNNER_TEMP"]+"/hf-public-transport/config.json"; assert json.load(open(p))["model_type"]=="gpt2"'
+          echo 'PUBLIC_TRANSPORT_OBSERVED_ONLY_NOT_A_FOUNDRY_ARTIFACT_OR_THAI_TTS_BAKEOFF'
