@@ -1,0 +1,42 @@
+name: MAF MakeHuman pinned HTTPS exact-byte research
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-makehuman-pinned-transfer.yml'
+      - 'tools/maf-acquire/cmd/makehuman-pinned-source/**'
+      - 'tools/maf-acquire/acquire/**'
+      - 'tools/maf-acquire/makehuman/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-pinned-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Acquire observed exact bytes with existing MAF HTTPS adapter, audit ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/maf-pinned-source"
+          cd tools/maf-acquire
+          go run ./cmd/makehuman-pinned-source \
+            "$RUNNER_TEMP/maf-pinned-source" \
+            > "$RUNNER_TEMP/maf-pinned-source/receipt.json"
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"maf-pinned-source"/"receipt.json"
+          r=json.loads(p.read_text())
+          assert r["status"]=="STAGED_VERIFIED_NOT_ADOPTED"
+          print("MAF_MH_PINNED_SOURCE_RECEIPT",json.dumps(r,sort_keys=True))
+          PY
+      - name: Metadata-only evidence (no source ZIP redistribution)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-makehuman-pinned-source-receipt
+          path: ${{ runner.temp }}/maf-pinned-source/receipt.json
+          if-no-files-found: ignore
+          retention-days: 3
