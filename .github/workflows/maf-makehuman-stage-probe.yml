@@ -1,0 +1,63 @@
+name: MAF MakeHuman ephemeral staged extraction proof
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-makehuman-stage-probe.yml'
+      - 'tools/maf-acquire/makehuman/**'
+      - 'tools/maf-acquire/cmd/makehuman-zip-stage/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staged-extraction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run original ZIP path, corruption and rollback tests
+        working-directory: tools/maf-acquire
+        run: |
+          set -euo pipefail
+          go test -race -count=1 ./makehuman
+          go vet ./makehuman ./cmd/makehuman-zip-stage
+      - name: Pinned public Visemes01 source -> audited ephemeral staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mh-candidate/bytes" "$RUNNER_TEMP/mh-candidate/stage"
+          cd tools/maf-acquire
+          go run ./cmd/makehuman-pinned-source "$RUNNER_TEMP/mh-candidate/bytes" > "$RUNNER_TEMP/mh-candidate/fetch.json"
+          go run ./cmd/makehuman-zip-stage \
+            -archive "$RUNNER_TEMP/mh-candidate/bytes/visemes01.zip" \
+            -stage-parent "$RUNNER_TEMP/mh-candidate/stage" \
+            > "$RUNNER_TEMP/mh-candidate/stage-local.json"
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"mh-candidate"
+          fetch=json.loads((root/"fetch.json").read_text())
+          stage=json.loads((root/"stage-local.json").read_text())
+          p=Path(stage["staging_root"]).resolve()
+          assert p.parent==(root/"stage").resolve()
+          actual_files=sorted(f for f in p.rglob("*") if f.is_file())
+          assert len(actual_files)==stage["member_count"]==fetch["member_count"]==23
+          assert stage["archive_sha256"]==fetch["archive_sha256"]
+          assert all(not f.is_symlink() for f in actual_files)
+          receipt={"status":"STAGED_EPHEMERAL_NOT_ADOPTED",
+                   "archive_sha256":stage["archive_sha256"],
+                   "members":len(actual_files),
+                   "unpacked_bytes":sum(f.stat().st_size for f in actual_files),
+                   "foundry_status":"NOT_ADOPTED",
+                   "limitations":["No publisher signed provenance","No license or consumer compatibility acceptance","No Foundry content-manifest/OCI promotion","No Drive custody or public redistribution"]}
+          assert receipt["unpacked_bytes"]==stage["total_unpacked_bytes"]
+          (root/"public-receipt.json").write_text(json.dumps(receipt,indent=2)+"\n")
+          print("MAF_MH_STAGED_EXTRACTION_RECEIPT",json.dumps(receipt,sort_keys=True))
+          PY
+      - name: Metadata only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maf-mh-stage-research-receipt
+          path: ${{ runner.temp }}/mh-candidate/public-receipt.json
+          if-no-files-found: ignore
+          retention-days: 3
