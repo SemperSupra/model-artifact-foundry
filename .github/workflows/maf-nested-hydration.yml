@@ -1,0 +1,26 @@
+name: MAF nested model-asset hydration source contract
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/maf-nested-hydration.yml'
+      - 'tools/hydrate.py'
+      - 'tests/test_hydrator_nested_artifacts.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-synthetic-nested-hydration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Confirm metadata-only, offline verification and run nested-source falsifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 --version
+          python3 -m compileall -q tools/hydrate.py tests/test_hydrator_nested_artifacts.py
+          python3 -m unittest discover -s tests -p 'test_hydrator_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_gated_local_acquisition.py' -v
+          sha256sum tools/hydrate.py tests/test_hydrator_nested_artifacts.py
+          echo "MAF_NESTED_HYDRATION_STATUS=SOURCE_ONLY_SYNTHETIC_TESTS_PASS"
