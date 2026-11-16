@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -122,6 +123,17 @@ func Verify(p string, f File) (FileReceipt, error) {
 	if !fi.Mode().IsRegular() {
 		return FileReceipt{}, errors.New("nonregular/symlink input")
 	}
+	// This source-only intake is Linux-hosted today. Fail closed on other
+	// platforms if their file metadata cannot prove exclusive inode custody.
+	// A matching hash alone never makes an external hardlink safe to adopt.
+	v := reflect.ValueOf(fi.Sys())
+	if v.Kind() != reflect.Ptr || v.IsNil() || v.Elem().Kind() != reflect.Struct {
+		return FileReceipt{}, errors.New("filesystem link count unavailable")
+	}
+	linkCount := v.Elem().FieldByName("Nlink")
+	if !linkCount.IsValid() || !linkCount.CanUint() || linkCount.Uint() != 1 {
+		return FileReceipt{}, errors.New("external hardlink custody or unverifiable link count")
+	}
 	if fi.Size() > f.MaxBytes {
 		return FileReceipt{}, fmt.Errorf("size exceeds budget: %d", fi.Size())
 	}
@@ -131,6 +143,10 @@ func Verify(p string, f File) (FileReceipt, error) {
 		return FileReceipt{}, e
 	}
 	defer r.Close()
+	opened, e := r.Stat()
+	if e != nil || !os.SameFile(fi, opened) {
+		return FileReceipt{}, errors.New("file identity changed during open")
+	}
 	n, e := io.Copy(h, io.LimitReader(r, f.MaxBytes+1))
 	if e != nil {
 		return FileReceipt{}, e
@@ -152,6 +168,28 @@ func ExecRunner(ctx context.Context, name string, args ...string) error {
 	c.Stdout = io.Discard
 	c.Stderr = io.Discard
 	return c.Run()
+}
+
+// verifyStagedAncestorPath rejects any symbolic-link parent created by the
+// downloader between the trusted empty staging root and one selected file.
+// Checking Lstat only on the final file is insufficient.
+func verifyStagedAncestorPath(root, relative string) error {
+	parent := filepath.Dir(filepath.FromSlash(relative))
+	if parent == "." {
+		return nil
+	}
+	cur := root
+	for _, part := range strings.Split(parent, string(filepath.Separator)) {
+		cur = filepath.Join(cur, part)
+		info, err := os.Lstat(cur)
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("unsafe staged ancestor directory: %s", relative)
+		}
+	}
+	return nil
 }
 
 // AcquireHF delegates transfer to the official, pinned hf CLI; never runs upstream code.
@@ -184,6 +222,9 @@ func AcquireHF(ctx context.Context, req Request, dir string, run Runner) (Receip
 	}
 	out := Receipt{Status: "STAGED_VERIFIED_NOT_PROMOTED", Source: req.Source, FoundryStatus: "CANDIDATE_ONLY", IdentityKind: "file-sha256", Notes: "not a Foundry identity; run existing Foundry adopt/verification and rights gates independently"}
 	for _, f := range req.Files {
+		if e := verifyStagedAncestorPath(dir, f.Path); e != nil {
+			return Receipt{Status: "HOLD_UNSAFE_CUSTODY", Source: req.Source, FoundryStatus: "NOT_ADOPTED", IdentityKind: "none"}, e
+		}
 		rec, e := Verify(filepath.Join(dir, filepath.FromSlash(f.Path)), f)
 		if e != nil {
 			return Receipt{Status: "HOLD_INVALID_BYTES", Source: req.Source, FoundryStatus: "NOT_ADOPTED", IdentityKind: "none"}, e
