@@ -19,7 +19,7 @@ Private R008 Google Drive custody readback is for an original **synthetic** 524,
 
 ## Gate state
 
-- `PUBLIC_NEUTRAL_TRANSFER`: candidate, pending free GHA R008 live replay.
+- `PUBLIC_NEUTRAL_TRANSFER`: TEST-ONLY PASS on free public GHA #43840509916 (three jobs success), exact tested source SHA `2d3b45e03192beb0c579ce1045da06a3e1a63582`. First GHA #43839915446 failed due to incorrect JSON receipt key capitalization and was preserved; source-bound test added and rerun passed.
 - `STANDOFF_CANONICAL_DIGEST`: computed test-only, not approved.
 - `PRIVATE_SYNTHETIC_DRIVE_BYTE_CUSTODY`: verified for this one small synthetic file.
 - `THAI_TTS_MODEL_ACQUISITION`: held pending source rights, exact weights, private executor admission and native evaluation.

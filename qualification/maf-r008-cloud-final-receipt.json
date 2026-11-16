@@ -1,0 +1,50 @@
+{
+  "actual_integration": {
+    "candidate_digest": "sha256:72a4d3989b6a35e71c33b65a9f44d345dd1061fbaae11a9a23f84c3c78dac83c",
+    "candidate_promotion": false,
+    "canonical_implementation": "existing tools/adopt_local_artifact.py canonical_identity_material + content_manifest_digest",
+    "digest_identity": "TEST_ONLY_CANDIDATE_NOT_ADOPTED",
+    "ghcr_published": false,
+    "go_cli": "hf download exact revision; verified bytes; test-only licensing",
+    "independent_staged_byte_rehash": "PASS",
+    "model_weight_bytes_retained": false
+  },
+  "blue_run": {
+    "conclusion": "success",
+    "go_tests": "25/25 PASS locally and exact GHA source job PASS",
+    "id": 43840509916,
+    "jobs": {
+      "public-hf-transport": "success",
+      "public-safetensors-transport": "success",
+      "source-contract": "success"
+    },
+    "python_bridge_tests": "9/9 PASS in GHA, includes real Go CLI / synthetic fake hf test",
+    "tested_head": "2d3b45e03192beb0c579ce1045da06a3e1a63582"
+  },
+  "date": "2026-11-16",
+  "draft_pr": 80,
+  "first_red_run": {
+    "conclusion": "failure",
+    "failing_step": "bridge expected uppercase Go receipt fields; actual JSON tags lowercase",
+    "id": 43839915446,
+    "tested_head": "7239eaae335ed9d53e9d886cc059e4133029c2fd"
+  },
+  "hygiene": {
+    "commit_strategy": "atomic 7-file tree+commit CAS fast-forward; correction atomic 2-file commit",
+    "no_private_model_selection_in_public_ci": true,
+    "real_thai_tts_model": "NOT_ACQUIRED",
+    "source_rights_approval": "HOLD",
+    "ten_current_blobs_git_sha_verified": true
+  },
+  "neutral_source": {
+    "authentication": "ANONYMOUS",
+    "exact_commit": "8301186e0724d418a8d4f5eb17011c9226f5b766",
+    "provider": "huggingface",
+    "repository": "optimum-intel-internal-testing/tiny-random-bert",
+    "selected_file": "model.safetensors",
+    "sha256": "965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de"
+  },
+  "notes": "Successful source transport and canonical candidate identity derivation, not rights, quality, native Thai voice, model catalog approval or native HF cache adoption.",
+  "owner_repository": "SemperSupra/model-artifact-foundry",
+  "schema_version": "maf-public-acquire-canonical-r008/1"
+}
