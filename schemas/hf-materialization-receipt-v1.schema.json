@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/model-artifact-foundry/schemas/hf-materialization-receipt-v1.schema.json",
+  "title": "Model Artifact Foundry Hugging Face Native Materialization Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "repository", "source_revision", "identity_strength", "materialization", "verification"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "provider": {"const": "huggingface"},
+    "repository": {"type": "string", "minLength": 1},
+    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "identity_strength": {"const": "repository_commit"},
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["handle_kind", "native_handle", "outcome", "provider_native_cache"],
+      "properties": {
+        "handle_kind": {"const": "huggingface_native_snapshot"},
+        "native_handle": {"type": "string", "minLength": 1},
+        "outcome": {"enum": ["cache_hit", "materialized"]},
+        "provider_native_cache": {"const": true}
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "files_checked", "sizes_checked", "observation_digest"],
+      "properties": {
+        "status": {"const": "verified_structure"},
+        "files_checked": {"type": "integer", "minimum": 0},
+        "sizes_checked": {"type": "integer", "minimum": 0},
+        "observation_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

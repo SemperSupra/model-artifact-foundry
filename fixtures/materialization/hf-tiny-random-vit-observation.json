@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "provider": "huggingface",
+  "locator": {
+    "repository": "optimum-intel-internal-testing/tiny-random-vit",
+    "requested_revision": "d4ddddabea80a187f3adce69c76ab017d2cf9a86"
+  },
+  "observed_at": "2026-09-01T00:00:00Z",
+  "resolved": {
+    "source_revision": "d4ddddabea80a187f3adce69c76ab017d2cf9a86",
+    "identity_strength": "repository_commit"
+  },
+  "access": {
+    "private": false,
+    "gated": false,
+    "disabled": false
+  },
+  "declared_license": {
+    "value": null,
+    "source": "huggingface-model-card-metadata",
+    "interpretation": "declared-metadata-only"
+  },
+  "files": [
+    {
+      "path": "config.json",
+      "size": 605
+    }
+  ],
+  "evidence": {
+    "fixture": "fixtures/materialization/hf-tiny-random-vit-observation.json",
+    "provenance": "public-live-smoke-pinned-revision"
+  }
+}
