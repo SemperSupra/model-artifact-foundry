@@ -61,14 +61,14 @@ def bridge(witness:dict, receipt:dict,stage:pathlib.Path)->dict:
     if witness.get('approval')!='DENIED' or witness.get('package_publication') is not False or witness.get('license_admission')!='UNVERIFIED_NOT_FOR_REDISTRIBUTION':raise Hold('fixture cannot carry approval')
     src=witness.get('source',{})
     if src.get('provider')!='huggingface' or not _REV.fullmatch(str(src.get('discovery_ref',''))):raise Hold('fixture not pinned')
-    if receipt.get('Status')!='STAGED_VERIFIED_NOT_PROMOTED' or receipt.get('FoundryStatus')!='CANDIDATE_ONLY' or receipt.get('IdentityKind')!='file-sha256':raise Hold('Go source receipt falsely elevated')
-    from_go=receipt.get('Source',{})
+    if receipt.get('status')!='STAGED_VERIFIED_NOT_PROMOTED' or receipt.get('foundry_status')!='CANDIDATE_ONLY' or receipt.get('identity_kind')!='file-sha256':raise Hold('Go source receipt falsely elevated')
+    from_go=receipt.get('source',{})
     if from_go.get('provider')!=src['provider'] or from_go.get('repository')!=src['repository'] or from_go.get('revision')!=src['discovery_ref'] or from_go.get('access')!='public-ungated':raise Hold('Go source mismatch')
     files=witness.get('files')
     if not isinstance(files,list) or len(files)!=1:raise Hold('fixture expects one selected file')
-    if not isinstance(receipt.get('Files'),list) or len(receipt['Files'])!=len(files):raise Hold('Go file count mismatch')
+    if not isinstance(receipt.get('files'),list) or len(receipt['files'])!=len(files):raise Hold('Go file count mismatch')
     rows=[]
-    for item, got in zip(files,receipt['Files']):
+    for item, got in zip(files,receipt['files']):
         if not _SHA.fullmatch(item.get('sha256','')):raise Hold('witness digest invalid')
         if type(item.get('max_bytes')) is not int:raise Hold('witness byte cap invalid')
         n,sha=safe_file(stage,item['path'],item['max_bytes'])
