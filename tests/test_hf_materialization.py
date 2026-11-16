@@ -328,3 +328,45 @@ def test_network_download_uses_exact_observed_file_allowlist(tmp_path):
     assert r["verification"]["files_checked"] == 1
     assert calls[0]["allow_patterns"] == ["config.json"]
     assert calls[0]["revision"] == REVISION
+
+
+@pytest.mark.parametrize("bad", [
+    "*.safetensors",
+    "weights/model?.bin",
+    "model[12].safetensors",
+    "bad\\nconfig.json",
+    "bad\\x00config.json",
+])
+def test_untrusted_glob_or_control_character_is_rejected_before_download(tmp_path, bad):
+    calls = []
+
+    def download(**kwargs):
+        calls.append(kwargs)
+        return str(tmp_path)
+
+    with pytest.raises(ValueError, match="unsafe observation file path"):
+        ensure_hf_native_snapshot(
+            observation(files=[{"path": bad}]),
+            snapshot_download_fn=download,
+            cache_miss_exceptions=(FakeCacheMiss,),
+        )
+    assert not calls
+
+
+def test_literally_selected_model_file_cannot_expand_to_other_shards(tmp_path):
+    snapshot = tmp_path / "snapshot"
+    snapshot.mkdir()
+    (snapshot / "model-00001-of-00002.safetensors").write_bytes(b"abc")
+    calls = []
+
+    def download(**kwargs):
+        calls.append(kwargs)
+        return str(snapshot)
+
+    receipt = ensure_hf_native_snapshot(
+        observation(files=[{"path": "model-00001-of-00002.safetensors", "size": 3}]),
+        snapshot_download_fn=download,
+        cache_miss_exceptions=(FakeCacheMiss,),
+    )
+    assert receipt["verification"]["files_checked"] == 1
+    assert calls[0]["allow_patterns"] == ["model-00001-of-00002.safetensors"]

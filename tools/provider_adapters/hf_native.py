@@ -39,6 +39,10 @@ def observation_digest(observation: dict[str, Any]) -> str:
 def _safe_relative_path(value: Any) -> PurePosixPath:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError(f"unsafe observation file path: {value!r}")
+    # Hub allow_patterns are globs: an untrusted exact filename must not
+    # become a broad wildcard download selection.
+    if any(ch in value for ch in "*?[]") or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        raise ValueError(f"unsafe observation file path: {value!r}")
     path = PurePosixPath(value)
     if path.as_posix() != value or path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
         raise ValueError(f"unsafe observation file path: {value!r}")
