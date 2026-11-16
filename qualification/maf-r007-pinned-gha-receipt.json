@@ -1,0 +1,47 @@
+{
+  "schema_version": "maf-r007-pinned-hf-transport/1",
+  "date": "2026-11-16",
+  "repo": "SemperSupra/model-artifact-foundry",
+  "pr": 80,
+  "tested_head": "a79d68f2ee977fe45b95b3a10ef6071c826111ab",
+  "gha_run_id": 43799693902,
+  "gha_run_conclusion": "success",
+  "jobs": {
+    "source-contract": "success",
+    "public-hf-transport": "success",
+    "public-safetensors-transport": "success"
+  },
+  "source": {
+    "provider": "huggingface",
+    "repo": "optimum-intel-internal-testing/tiny-random-bert",
+    "exact_revision": "8301186e0724d418a8d4f5eb17011c9226f5b766",
+    "filename": "model.safetensors",
+    "independently_expected_sha256": "965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de"
+  },
+  "proof": {
+    "metadata_gated": false,
+    "anonymous_download": true,
+    "real_model_weight_file": true,
+    "sha256sum_check": "PASS",
+    "header_structure_check": "PASS",
+    "test_only_no_weight_publication": true,
+    "artifact_bytes_retained_in_repo": false
+  },
+  "source_code_regressions": {
+    "go_tests": "21/21 PASS",
+    "race": "PASS",
+    "vet": "PASS",
+    "red_then_blue": [
+      "reject symlinked downloaded ancestor",
+      "reject hardlinked downloaded file"
+    ],
+    "source_sha_match": "verified readback in same turn"
+  },
+  "authority": "Evidence only; no OCI/content-manifest approval, licensed commercial release, Thai TTS performance, rights review, or private byte custody",
+  "follow_up": [
+    "independent internal exact SHA/custody review",
+    "approved Thai model source+rights and GHA executor admission",
+    "source-local full component byte verification",
+    "canonical Foundry adopter #70/#71 independent review"
+  ]
+}
