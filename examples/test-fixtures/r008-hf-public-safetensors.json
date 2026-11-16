@@ -1,0 +1,23 @@
+{
+  "schema_version": "maf-public-neutral-fixture/r008",
+  "status": "TEST_ONLY_NOT_APPROVED_NOT_MIRRORABLE",
+  "logical_id": "test-fixture/hf/tiny-random-bert-safetensors",
+  "source": {
+    "provider": "huggingface",
+    "repository": "optimum-intel-internal-testing/tiny-random-bert",
+    "discovery_ref": "8301186e0724d418a8d4f5eb17011c9226f5b766"
+  },
+  "access": {"mode": "public-neutral-fixture-transport-only"},
+  "files": [
+    {
+      "path": "model.safetensors",
+      "sha256": "965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de",
+      "max_bytes": 1048576
+    }
+  ],
+  "license_admission": "UNVERIFIED_NOT_FOR_REDISTRIBUTION",
+  "rights_review": "HOLD",
+  "approval": "DENIED",
+  "model_execution": "FORBIDDEN",
+  "package_publication": false
+}

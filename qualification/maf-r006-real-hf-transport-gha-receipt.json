@@ -1,0 +1,40 @@
+{
+  "schema_version": "maf-public-hf-transport/r006",
+  "repo": "SemperSupra/model-artifact-foundry",
+  "pr": 80,
+  "observed_at": "2026-11-15",
+  "tested_source_head": "80757a99b2cf7c43ef524caa56fb626173b015af",
+  "github_actions": {
+    "run_id": 43695041234,
+    "job_id": 132753593550,
+    "workflow": "MAF public source admission tests (R006)",
+    "run_conclusion": "success",
+    "job_conclusion": "success",
+    "scenario": "anonymous-public-small-config-transport"
+  },
+  "upstream": {
+    "provider": "huggingface",
+    "repository": "sshleifer/tiny-gpt2",
+    "revision": "5f91d94bd9cd7190a9f3216ff93cd1dd95f2c7be",
+    "selected_file": "config.json",
+    "content_sha256_observed": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0"
+  },
+  "transfer": {
+    "command_system": "official hf CLI",
+    "credential_kind": "none",
+    "max_bytes_asserted_less_than": 2048,
+    "download_occured": true,
+    "model_weights_downloaded": false,
+    "model_parameters_loaded": false
+  },
+  "status": "TRANSPORT_PROVED_NOT_A_CANONICAL_FOUNDRY_IDENTITY",
+  "claims_not_established": [
+    "independent expected SHA witness",
+    "model rights/admission/redistribution",
+    "Thai TTS model download",
+    "native Thai audio quality",
+    "Foundry adoption and promotion",
+    "private custody/rehydration"
+  ],
+  "evidence": "GitHub Actions job logs; exact HF file SHA-256 from public small config; configuration key model_type=gpt2"
+}

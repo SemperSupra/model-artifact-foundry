@@ -1,0 +1,42 @@
+{
+  "batch": "R007",
+  "observed_at": "2026-11-16",
+  "repo": "SemperSupra/model-artifact-foundry",
+  "source_status": "21/21 local Go tests PASS; race PASS; vet PASS",
+  "red_bugs": [
+    "external symlink ancestor accepted byte-identical file",
+    "external hardlink accepted byte-identical file"
+  ],
+  "blue_fix": "staging parent Lstat checks, hardlink Nlink==1, opened inode identity check",
+  "gha_first_run_id": 43799211293,
+  "gha_first_run_status": "SUCCESS",
+  "gha_first_run_source_head": "b4b79236eefe8f582822d698c81228ddb1ecef86",
+  "gha_safetensors_source_repo": "optimum-intel-internal-testing/tiny-random-bert",
+  "gha_safetensors_exact_revision": "8301186e0724d418a8d4f5eb17011c9226f5b766",
+  "gha_safetensors_sha256": "965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de",
+  "gha_safetensors_status": "ACTUAL_ANONYMOUS_BYTES_VERIFIED_AND_DELETED",
+  "gha_2nd_exact_sha_pin": "READY_TO_RUN",
+  "rights_review": "HOLD",
+  "thai_model_bytes": 0,
+  "foundry_canonical_adoption": "NOT_RUN",
+  "files": [
+    {
+      "path": "tools/maf-acquire/acquire/acquire.go",
+      "bytes": 12365,
+      "sha256": "bf989c13cae4f99721c23f2631376f1bc3a28dc023d85f57326c741714378862",
+      "blob_sha": "9e0f606ff5eb9f25fb71c773b9fb665789a4f4da"
+    },
+    {
+      "path": "tools/maf-acquire/acquire/acquire_test.go",
+      "bytes": 6917,
+      "sha256": "2eb92339c8b5c260e01e446ddf80c7de3d15e331601d40548536feecf156cc2e",
+      "blob_sha": "a269e2ae2503157789f5a688e6e9780d644aa5b4"
+    },
+    {
+      "path": ".github/workflows/maf-r006-source-admission.yml",
+      "bytes": 4753,
+      "sha256": "d24aa6dd65c863e465cc13a4054725cf2ea97cf417d52e16895e00e9772630c0",
+      "blob_sha": "409db96c46764093685bad65a0f486f45f9221fa"
+    }
+  ]
+}
