@@ -40,3 +40,59 @@ jobs:
           sha256sum "$file"
           python3 -c 'import json,os; p=os.environ["RUNNER_TEMP"]+"/hf-public-transport/config.json"; assert json.load(open(p))["model_type"]=="gpt2"'
           echo 'PUBLIC_TRANSPORT_OBSERVED_ONLY_NOT_A_FOUNDRY_ARTIFACT_OR_THAI_TTS_BAKEOFF'
+  public-safetensors-transport:
+    # Neutral public fixture, not a project model selection and not distribution.
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: read
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+    steps:
+      - name: Resolve immutable public HF revision and verify independent file SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check 'huggingface_hub==1.19.0'
+          python3 - <<'PY'
+          import os, re
+          from huggingface_hub import HfApi
+          repo='optimum-intel-internal-testing/tiny-random-bert'
+          file='model.safetensors'
+          expected='965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de'
+          info=HfApi().model_info(repo,files_metadata=True,token=False)
+          assert info.private is False and info.gated is False, 'public ungated fixture required'
+          assert re.fullmatch('[0-9a-f]{40}',info.sha), 'exact revision missing'
+          records=[s for s in info.siblings if s.rfilename==file]
+          assert len(records)==1, 'selected safetensors file absent'
+          if records[0].lfs and records[0].lfs.get('sha256'):
+              assert records[0].lfs['sha256']==expected, 'published blob metadata differs from independent expected hash'
+          print('HF_ANONYMOUS_METADATA_SHA='+info.sha)
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write('HF_EXACT_REVISION='+info.sha+'\n')
+          PY
+      - name: Fetch only public 520kB safetensors, validate digest and structure, never upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/hf-binary-fixture"
+          hf download 'optimum-intel-internal-testing/tiny-random-bert' model.safetensors \
+            --revision "$HF_EXACT_REVISION" \
+            --local-dir "$RUNNER_TEMP/hf-binary-fixture"
+          file="$RUNNER_TEMP/hf-binary-fixture/model.safetensors"
+          test -f "$file"
+          test "$(wc -c < "$file")" -gt 500000
+          test "$(wc -c < "$file")" -lt 1048576
+          echo '965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de  '"$file" | sha256sum -c -
+          python3 - <<'PY'
+          import json, os, pathlib, struct
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'hf-binary-fixture/model.safetensors'
+          with p.open('rb') as stream:
+              header_size=struct.unpack('<Q',stream.read(8))[0]
+              assert 8<header_size<65536, 'unexpected safetensors metadata size'
+              metadata=json.loads(stream.read(header_size))
+              tensors=[v for k,v in metadata.items() if k!='__metadata__']
+              assert tensors and all(isinstance(t,dict) and 'data_offsets' in t for t in tensors), 'no valid tensor metadata'
+          print('PUBLIC_SAFETENSORS_SHA256_VERIFIED_NOT_MODEL_ACCEPTANCE')
+          PY
+          rm -rf "$RUNNER_TEMP/hf-binary-fixture"
