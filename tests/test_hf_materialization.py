@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from provider_adapters.hf_native import (  # noqa: E402
     canonical_json,
     ensure_hf_native_snapshot,
     observation_digest,
+    verify_native_snapshot,
 )
 
 REVISION = "0123456789abcdef0123456789abcdef01234567"
@@ -228,3 +230,64 @@ def test_receipt_schema_is_versioned():
     schema = json.loads((ROOT / "schemas/hf-materialization-receipt-v1.schema.json").read_text())
     assert schema["properties"]["schema_version"]["const"] == 1
     assert schema["properties"]["provider"]["const"] == "huggingface"
+
+
+def test_rejects_malformed_repository_before_provider_call(tmp_path):
+    for malicious in ("../shadow", "a/b/extra", "https://host/path", "a/../b"):
+        obs = observation()
+        obs["locator"]["repository"] = malicious
+        calls = []
+
+        def download(**kwargs):
+            calls.append(kwargs)
+            return str(tmp_path)
+
+        with pytest.raises(ValueError, match="exact owner/repository"):
+            ensure_hf_native_snapshot(
+                obs, snapshot_download_fn=download,
+                cache_miss_exceptions=(FakeCacheMiss,),
+            )
+        assert not calls
+
+
+@pytest.mark.parametrize("bad", ["a//config.json", "a/./config.json", "./config.json"])
+def test_rejects_aliased_relative_file_paths(tmp_path, bad):
+    with pytest.raises(ValueError, match="unsafe observation file path"):
+        ensure_hf_native_snapshot(
+            observation(files=[{"path": bad}]),
+            snapshot_download_fn=lambda **kw: str(tmp_path),
+            cache_miss_exceptions=(FakeCacheMiss,),
+        )
+
+
+def test_native_snapshot_rejects_external_link_even_with_equal_size(tmp_path):
+    root = tmp_path / "hub" / "models--example--tiny-model" / "snapshots" / REVISION
+    root.mkdir(parents=True)
+    outside = tmp_path / "private-external"
+    outside.write_bytes(b"abc")
+    (root / "config.json").symlink_to(outside)
+    with pytest.raises(HuggingFaceSnapshotVerificationError, match="escapes provider-native blob cache"):
+        verify_native_snapshot(root, [{"path": "config.json", "size": 3}])
+
+
+def test_native_snapshot_permits_provider_blob_symlink(tmp_path):
+    model = tmp_path / "hub" / "models--example--tiny-model"
+    blob = model / "blobs" / "abc"
+    blob.parent.mkdir(parents=True)
+    blob.write_bytes(b"abc")
+    root = model / "snapshots" / REVISION
+    root.mkdir(parents=True)
+    (root / "config.json").symlink_to(os.path.relpath(blob, root))
+    result = verify_native_snapshot(root, [{"path": "config.json", "size": 3}])
+    assert result["files_checked"] == 1
+    assert result["sizes_checked"] == 1
+
+
+def test_native_snapshot_rejects_external_hardlink_even_with_equal_size(tmp_path):
+    root = tmp_path / "hub" / "models--example--tiny-model" / "snapshots" / REVISION
+    root.mkdir(parents=True)
+    outside = tmp_path / "private-external"
+    outside.write_bytes(b"abc")
+    os.link(outside, root / "config.json")
+    with pytest.raises(HuggingFaceSnapshotVerificationError, match="hardlink"):
+        verify_native_snapshot(root, [{"path": "config.json", "size": 3}])

@@ -40,7 +40,7 @@ def _safe_relative_path(value: Any) -> PurePosixPath:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError(f"unsafe observation file path: {value!r}")
     path = PurePosixPath(value)
-    if path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
+    if path.as_posix() != value or path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
         raise ValueError(f"unsafe observation file path: {value!r}")
     return path
 
@@ -53,8 +53,8 @@ def _observation_fields(
 
     locator = observation.get("locator") or {}
     repository = locator.get("repository")
-    if not isinstance(repository, str) or not repository:
-        raise ValueError("observation locator.repository is required")
+    if not isinstance(repository, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*", repository) or any(part in (".", "..") for part in repository.split("/")):
+        raise ValueError("observation locator.repository must be an exact owner/repository")
 
     resolved = observation.get("resolved") or {}
     revision = resolved.get("source_revision")
@@ -93,27 +93,59 @@ def verify_native_snapshot(
 
     Hugging Face snapshots may contain symlinks into the provider-native blob
     cache, so verification deliberately checks safe relative names plus the
-    resulting file/size rather than requiring symlink targets to remain under the
-    snapshot directory.
+    resulting file/size and bounding symlinks to the same provider-native
+    model/blob cache instead of following arbitrary host paths.
     """
     root = Path(snapshot_path)
-    if not root.exists() or not root.is_dir():
+    if not root.exists() or not root.is_dir() or root.is_symlink():
         raise HuggingFaceSnapshotVerificationError(
-            "native snapshot handle must be an existing directory"
+            "native snapshot handle must be a real existing directory"
         )
+    root_real = root.resolve(strict=True)
+    # Native Hub file symlinks point to blobs in the same model cache (or
+    # its provider-owned shared blob directory), not arbitrary host paths.
+    if root_real.parent.name == "snapshots":
+        model_cache = root_real.parent.parent
+        allowed_blobs = (model_cache / "blobs", model_cache.parent / "blobs")
+    else:
+        allowed_blobs = ()
+
+    def within(child: Path, parent: Path) -> bool:
+        return child == parent or parent in child.parents
 
     checked = 0
     sizes_checked = 0
     for item in files:
         rel = _safe_relative_path(item.get("path"))
         candidate = root.joinpath(*rel.parts)
+        for ancestor in candidate.parents:
+            if ancestor == root:
+                break
+            if ancestor.is_symlink():
+                raise HuggingFaceSnapshotVerificationError(
+                    f"snapshot ancestor symlink is not permitted: {rel.as_posix()}"
+                )
         if not candidate.exists() or not candidate.is_file():
             raise HuggingFaceSnapshotVerificationError(
                 f"snapshot missing expected file: {rel.as_posix()}"
             )
+        target = candidate.resolve(strict=True)
+        if candidate.is_symlink():
+            if not any(within(target, parent) for parent in allowed_blobs):
+                raise HuggingFaceSnapshotVerificationError(
+                    f"snapshot link escapes provider-native blob cache: {rel.as_posix()}"
+                )
+        elif not within(target, root_real):
+            raise HuggingFaceSnapshotVerificationError(
+                f"snapshot path escapes snapshot root: {rel.as_posix()}"
+            )
+        if target.stat().st_nlink != 1:
+            raise HuggingFaceSnapshotVerificationError(
+                f"snapshot hardlink needs separate custody verification: {rel.as_posix()}"
+            )
         checked += 1
         if "size" in item:
-            actual_size = candidate.stat().st_size
+            actual_size = target.stat().st_size
             if actual_size != item["size"]:
                 raise HuggingFaceSnapshotVerificationError(
                     f"snapshot size mismatch for {rel.as_posix()}: "
