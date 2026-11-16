@@ -93,3 +93,16 @@ This smoke validates Hub/native-cache mechanics only. It does not qualify the ti
 ## Non-goals
 
 No KV-Ground download in CI, generic acquisition framework, plugin system, Civitai/Ollama/OpenRouter materialization, runtime loading, target planning, project validator, or release/publication work is introduced.
+
+
+## R009 ownership and source-hardening reconciliation — 2026-11-16
+
+**Canonical Hugging Face-native download owner:** this PR's `tools/provider_adapters/hf_native.py` and `tools/materialize_hf_observation.py` are the reusable cache-first provider-native path. The newer generic Go source preflight (draft [#80](https://github.com/SemperSupra/model-artifact-foundry/pull/80)) must not become a second HF cache/credentials/download authority. Its useful digest/byte verification and generic HTTPS provenance controls should be reconciled through reviewed contracts, with non-HF stacked consumers preserved. No unreviewed code merge is implied.
+
+**Exact-revision file selection:** materialization now supplies `allow_patterns` from the bounded 1–64 observed, normalized relative file paths to `snapshot_download`. It never silently harvests all unrelated files when a small model component set was requested. New negative controls reject aliased paths, invalid owner/repository locators, external symlink targets and external hardlink substitutes; provider-native links into bounded HF blob-cache roots are supported. This is structural/path safety, not full content authentication: the independent per-file hash and immutable content-manifest work remains in draft [#70](https://github.com/SemperSupra/model-artifact-foundry/pull/70) / stacked [#71](https://github.com/SemperSupra/model-artifact-foundry/pull/71).
+
+**Credentials:** the native `huggingface_hub` client uses the calling environment's already authorized credential resolution; this source accepts or prints no token. The linked GitHub integration does not expose a way to inspect currently configured Actions secret values or a user's local Hugging Face login state. Public Actions smoke uses an ungated public fixture without assuming a token exists. Private gated access state remains under private Foundry #6 and user-granted upstream terms; this PR does not configure or grant it.
+
+**Verified cloud execution:** [run #43857626029](https://github.com/SemperSupra/model-artifact-foundry/actions/runs/43857626029) passed deterministic and live cache-first smoke after path/link hardening; [run #43858037615](https://github.com/SemperSupra/model-artifact-foundry/actions/runs/43858037615) passed **20/20 pytest tests** and live exact-revision selected-file native materialization/cache-hit, source commit `89c7a10a0b5e7d65e12f54af90aa2ea5c3ebd642`. Provider observation and Faster Whisper regressions attached to the same commit also passed. No Thai-specific model bytes or vocal quality tested and no authorized artifact was promoted.
+
+**Remaining:** independent code/rights review, order this stacked PR after provider observation and adapter posture branches, reconcile #70/#71 native no-copy hash verification, separately prove any locally configured auth profile and exact gated consent on an admitted private actor, then test specific consumer audio models without exposing private selection on public runner.
