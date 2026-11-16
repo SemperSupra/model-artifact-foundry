@@ -60,9 +60,10 @@ jobs:
           repo='optimum-intel-internal-testing/tiny-random-bert'
           file='model.safetensors'
           expected='965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de'
-          info=HfApi().model_info(repo,files_metadata=True,token=False)
+          pinned='8301186e0724d418a8d4f5eb17011c9226f5b766'  # 2026-11-16 observed original provenance
+          info=HfApi().model_info(repo,revision=pinned,files_metadata=True,token=False)
           assert info.private is False and info.gated is False, 'public ungated fixture required'
-          assert re.fullmatch('[0-9a-f]{40}',info.sha), 'exact revision missing'
+          assert info.sha==pinned, 'upstream changed or failed to resolve independently pinned revision'
           records=[s for s in info.siblings if s.rfilename==file]
           assert len(records)==1, 'selected safetensors file absent'
           if records[0].lfs and records[0].lfs.get('sha256'):
