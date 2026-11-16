@@ -21,6 +21,8 @@ jobs:
           go test ./...
           go test -race ./...
           go vet ./...
+      - name: Foundry canonical source-only bridge negative tests
+        run: python3 -m unittest discover -s tools/maf-acquire/tests -p 'test_*.py' -v
   public-hf-transport:
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -49,6 +51,7 @@ jobs:
     env:
       HF_HUB_DISABLE_TELEMETRY: '1'
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Resolve immutable public HF revision and verify independent file SHA
         shell: bash
         run: |
@@ -72,28 +75,49 @@ jobs:
           with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
               f.write('HF_EXACT_REVISION='+info.sha+'\n')
           PY
-      - name: Fetch only public 520kB safetensors, validate digest and structure, never upload
+      - name: Execute actual Go source preflight, independently rehash, derive existing Foundry candidate identity
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/hf-binary-fixture"
-          hf download 'optimum-intel-internal-testing/tiny-random-bert' model.safetensors \
-            --revision "$HF_EXACT_REVISION" \
-            --local-dir "$RUNNER_TEMP/hf-binary-fixture"
-          file="$RUNNER_TEMP/hf-binary-fixture/model.safetensors"
-          test -f "$file"
-          test "$(wc -c < "$file")" -gt 500000
-          test "$(wc -c < "$file")" -lt 1048576
-          echo '965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de  '"$file" | sha256sum -c -
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          witness=pathlib.Path('examples/test-fixtures/r008-hf-public-safetensors.json')
+          content=witness.read_bytes(); d=json.loads(content)
+          assert d['status']=='TEST_ONLY_NOT_APPROVED_NOT_MIRRORABLE'
+          assert d['source']['discovery_ref']==os.environ['HF_EXACT_REVISION']
+          assert d['files'][0]['sha256']=='965f02b6a7e5520fc12f710e4e3b6132f697f1c8f648819553c5ade86752d2de'
+          req={'schema_version':1,'foundry_logical_id':d['logical_id'],
+               'source_declaration_sha256':hashlib.sha256(content).hexdigest(),
+               'source':{'provider':'huggingface','repository':d['source']['repository'],
+                         'revision':d['source']['discovery_ref'],'access':'public-ungated'},
+               'files':d['files'],'promotion':'candidate-only',
+               'license_evidence':'public-neutral-fixture-transport-only'}
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'r008-request.json'
+          p.write_text(json.dumps(req,sort_keys=True),encoding='utf-8')
+          PY
+          (cd tools/maf-acquire && go run . \
+            -manifest "$RUNNER_TEMP/r008-request.json" \
+            -staging-dir "$RUNNER_TEMP/hf-binary-fixture" \
+            -acquire-public-hf) > "$RUNNER_TEMP/r008-go-receipt.json"
+          python3 tools/maf-acquire/bridge_canonical.py \
+            --witness examples/test-fixtures/r008-hf-public-safetensors.json \
+            --go-receipt "$RUNNER_TEMP/r008-go-receipt.json" \
+            --stage "$RUNNER_TEMP/hf-binary-fixture" > "$RUNNER_TEMP/r008-candidate.json"
           python3 - <<'PY'
           import json, os, pathlib, struct
-          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'hf-binary-fixture/model.safetensors'
-          with p.open('rb') as stream:
-              header_size=struct.unpack('<Q',stream.read(8))[0]
-              assert 8<header_size<65536, 'unexpected safetensors metadata size'
-              metadata=json.loads(stream.read(header_size))
-              tensors=[v for k,v in metadata.items() if k!='__metadata__']
-              assert tensors and all(isinstance(t,dict) and 'data_offsets' in t for t in tensors), 'no valid tensor metadata'
-          print('PUBLIC_SAFETENSORS_SHA256_VERIFIED_NOT_MODEL_ACCEPTANCE')
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          stage=root/'hf-binary-fixture/model.safetensors'
+          joined=json.loads((root/'r008-candidate.json').read_text())
+          assert joined['status']=='CANDIDATE_CONTENT_DIGEST_COMPUTED_ONLY_NOT_APPROVED'
+          assert not joined['approved'] and not joined['adopted'] and not joined['published']
+          with stage.open('rb') as f:
+              length=struct.unpack('<Q',f.read(8))[0]
+              assert 8<length<65536
+              h=json.loads(f.read(length)); tensors=[v for k,v in h.items() if k!='__metadata__']
+              assert tensors and all('data_offsets' in x for x in tensors)
+          print('R008_PUBLIC_REAL_GO_ACQUISITION_TO_CANONICAL_FOUNDRY_CANDIDATE_DIGEST_TEST_ONLY_PASS')
+          print('R008_CANONICAL_CANDIDATE_DIGEST='+joined['canonical_content_manifest_digest'])
           PY
-          rm -rf "$RUNNER_TEMP/hf-binary-fixture"
+          rm -rf "$RUNNER_TEMP/hf-binary-fixture" "$RUNNER_TEMP/r008-request.json" "$RUNNER_TEMP/r008-go-receipt.json" "$RUNNER_TEMP/r008-candidate.json"
+          echo 'NOT_APPROVED_NOT_MIRRORED_NOT_A_THAI_TTS_QUALIFICATION'

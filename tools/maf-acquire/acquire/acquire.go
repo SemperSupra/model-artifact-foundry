@@ -3,6 +3,7 @@
 package acquire
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -74,7 +75,20 @@ func Validate(req Request) error {
 	if req.Source.Access != "public-ungated" {
 		return errors.New("public actor cannot acquire gated/private source")
 	}
-	if req.LicenseEvidence != "independent-reviewed" {
+	// The test-only class never authorizes real artifact licensing, mirroring, or promotion.
+	// It is limited to small anonymous neutral fixtures, so tests need not falsely
+	// assert independent publisher rights review to exercise the byte-transfer path.
+	if req.LicenseEvidence == "public-neutral-fixture-transport-only" {
+		if !strings.HasPrefix(req.FoundryLogicalID, "test-fixture/") ||
+			req.Source.Provider != "huggingface" || len(req.Files) > 2 {
+			return errors.New("neutral fixture transport requires bounded test-fixture Hugging Face identity")
+		}
+		for _, f := range req.Files {
+			if f.MaxBytes > 2*1024*1024 {
+				return errors.New("neutral fixture exceeds 2 MiB per-file cap")
+			}
+		}
+	} else if req.LicenseEvidence != "independent-reviewed" {
 		return errors.New("license/redistribution admission must be independently reviewed")
 	}
 	switch req.Source.Provider {
@@ -319,9 +333,85 @@ func FetchPinnedHTTPS(ctx context.Context, transport http.RoundTripper, rawurl s
 	}
 	return FileReceipt{Path: u.Hostname() + u.EscapedPath(), Bytes: n, SHA256: wantSHA}, nil
 }
+
+// rejectDuplicateJSONKeys enforces unambiguous request input before typed decoding.
+// Go's normal JSON decoding otherwise silently accepts repeated fields with
+// last-key-wins semantics, undermining independent policy comparisons.
+func rejectDuplicateJSONKeys(b []byte) error {
+	d := json.NewDecoder(bytes.NewReader(b))
+	var inspect func() error
+	inspect = func() error {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		delim, ok := tok.(json.Delim)
+		if !ok {
+			return nil
+		}
+		switch delim {
+		case '{':
+			seen := map[string]bool{}
+			for d.More() {
+				key, err := d.Token()
+				if err != nil {
+					return err
+				}
+				name, ok := key.(string)
+				if !ok {
+					return errors.New("non-string JSON object key")
+				}
+				if seen[name] {
+					return fmt.Errorf("duplicate JSON key %q", name)
+				}
+				seen[name] = true
+				if err := inspect(); err != nil {
+					return err
+				}
+			}
+			end, err := d.Token()
+			if err != nil {
+				return err
+			}
+			if end != json.Delim('}') {
+				return errors.New("JSON object not closed")
+			}
+		case '[':
+			for d.More() {
+				if err := inspect(); err != nil {
+					return err
+				}
+			}
+			end, err := d.Token()
+			if err != nil {
+				return err
+			}
+			if end != json.Delim(']') {
+				return errors.New("JSON array not closed")
+			}
+		default:
+			return errors.New("unexpected JSON closing delimiter")
+		}
+		return nil
+	}
+	if err := inspect(); err != nil {
+		return err
+	}
+	if _, err := d.Token(); err != io.EOF {
+		if err == nil {
+			return errors.New("trailing JSON content")
+		}
+		return err
+	}
+	return nil
+}
+
 func Parse(b []byte) (Request, error) {
 	var r Request
-	d := json.NewDecoder(strings.NewReader(string(b)))
+	if e := rejectDuplicateJSONKeys(b); e != nil {
+		return r, e
+	}
+	d := json.NewDecoder(bytes.NewReader(b))
 	d.DisallowUnknownFields()
 	if e := d.Decode(&r); e != nil {
 		return r, e

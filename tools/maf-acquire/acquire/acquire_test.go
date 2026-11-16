@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -223,5 +224,61 @@ func TestAcquireHFRejectsExternalHardlink(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("accepted byte-identical external hardlink")
+	}
+}
+
+// R008 RED/BLUE: duplicate and appended JSON policy fields must never be
+// interpreted differently by independent policy and transfer components.
+func TestParseRejectsDuplicateNestedKeys(t *testing.T) {
+	r := req()
+	b, e := json.Marshal(r)
+	if e != nil {
+		t.Fatal(e)
+	}
+	// Source has a repeated access key, which the standard decoder normally accepts.
+	b = []byte(strings.Replace(string(b), `"access":"public-ungated"`, `"access":"gated","access":"public-ungated"`, 1))
+	if _, e := Parse(b); e == nil {
+		t.Fatal("duplicate access accepted")
+	}
+}
+func TestParseRejectsDuplicateTopLevelKeys(t *testing.T) {
+	r := req()
+	b, e := json.Marshal(r)
+	if e != nil {
+		t.Fatal(e)
+	}
+	b = []byte(strings.Replace(string(b), `"promotion":"candidate-only"`, `"promotion":"approved","promotion":"candidate-only"`, 1))
+	if _, e := Parse(b); e == nil {
+		t.Fatal("duplicate promotion accepted")
+	}
+}
+func TestParseRejectsTrailingJSON(t *testing.T) {
+	r := req()
+	b, e := json.Marshal(r)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e := Parse(append(b, []byte(`{"promotion":"approved"}`)...)); e == nil {
+		t.Fatal("trailing policy object accepted")
+	}
+}
+func TestNeutralFixtureCannotBroadenProductionRights(t *testing.T) {
+	r := req()
+	r.LicenseEvidence = "public-neutral-fixture-transport-only"
+	if Validate(r) == nil {
+		t.Fatal("non-test-fixture ID admitted")
+	}
+	r.FoundryLogicalID = "test-fixture/hf/tiny-bert"
+	if e := Validate(r); e != nil {
+		t.Fatal("valid neutral fixture rejected", e)
+	}
+	r.Files[0].MaxBytes = 3 * 1024 * 1024
+	if Validate(r) == nil {
+		t.Fatal("oversized neutral fixture admitted")
+	}
+	r.Files[0].MaxBytes = 1024
+	r.Source.Access = "gated"
+	if Validate(r) == nil {
+		t.Fatal("gated neutral fixture admitted")
 	}
 }
