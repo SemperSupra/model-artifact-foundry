@@ -192,3 +192,36 @@ func TestHTTPSRedirectRejected(t *testing.T) {
 		t.Fatal("external redirect accepted")
 	}
 }
+
+// R007 RED: hash equivalence must not admit external filesystem custody.
+func TestAcquireHFRejectsSymlinkedAncestor(t *testing.T) {
+	dir := t.TempDir()
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "model.onnx"), []byte("synthetic public bytes"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := AcquireHF(context.Background(), req(), dir, func(_ context.Context, _ string, _ ...string) error {
+		return os.Symlink(outside, filepath.Join(dir, "sub"))
+	})
+	if err == nil {
+		t.Fatal("accepted byte-identical external directory symlink")
+	}
+}
+
+func TestAcquireHFRejectsExternalHardlink(t *testing.T) {
+	dir := t.TempDir()
+	outside := t.TempDir()
+	original := filepath.Join(outside, "model.onnx")
+	if err := os.WriteFile(original, []byte("synthetic public bytes"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := AcquireHF(context.Background(), req(), dir, func(_ context.Context, _ string, _ ...string) error {
+		if err := os.Mkdir(filepath.Join(dir, "sub"), 0700); err != nil {
+			return err
+		}
+		return os.Link(original, filepath.Join(dir, "sub", "model.onnx"))
+	})
+	if err == nil {
+		t.Fatal("accepted byte-identical external hardlink")
+	}
+}
