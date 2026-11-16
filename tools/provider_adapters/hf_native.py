@@ -65,8 +65,8 @@ def _observation_fields(
         raise ValueError("observation identity_strength must be repository_commit")
 
     files = observation.get("files")
-    if not isinstance(files, list):
-        raise ValueError("observation files must be a list")
+    if not isinstance(files, list) or not 1 <= len(files) <= 64:
+        raise ValueError("observation must select between 1 and 64 files")
 
     seen: set[str] = set()
     normalized_files: list[dict[str, Any]] = []
@@ -195,6 +195,7 @@ def ensure_hf_native_snapshot(
         "repo_id": repository,
         "revision": revision,
         "local_files_only": True,
+        "allow_patterns": [item["path"] for item in files],
     }
     if cache_dir is not None:
         kwargs["cache_dir"] = str(cache_dir)

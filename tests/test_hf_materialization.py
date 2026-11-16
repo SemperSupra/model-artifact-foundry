@@ -69,6 +69,7 @@ def test_cache_hit_is_one_local_only_exact_revision_call(tmp_path):
         "repo_id": "example/tiny-model",
         "revision": REVISION,
         "local_files_only": True,
+        "allow_patterns": ["config.json"],
     }]
     assert receipt["materialization"]["outcome"] == "cache_hit"
     assert receipt["materialization"]["native_handle"] == str(snapshot.resolve())
@@ -291,3 +292,39 @@ def test_native_snapshot_rejects_external_hardlink_even_with_equal_size(tmp_path
     os.link(outside, root / "config.json")
     with pytest.raises(HuggingFaceSnapshotVerificationError, match="hardlink"):
         verify_native_snapshot(root, [{"path": "config.json", "size": 3}])
+
+
+def test_missing_or_oversized_file_selection_is_rejected_without_transfer(tmp_path):
+    calls = []
+
+    def download(**kwargs):
+        calls.append(kwargs)
+        return str(tmp_path)
+
+    for files in ([], [{"path": f"component-{n}.bin"} for n in range(65)]):
+        with pytest.raises(ValueError, match="between 1 and 64"):
+            ensure_hf_native_snapshot(
+                observation(files=files),
+                snapshot_download_fn=download,
+                cache_miss_exceptions=(FakeCacheMiss,),
+            )
+    assert not calls
+
+
+def test_network_download_uses_exact_observed_file_allowlist(tmp_path):
+    snapshot = make_snapshot(tmp_path)
+    calls = []
+
+    def download(**kwargs):
+        calls.append(kwargs)
+        return str(snapshot)
+
+    obs = observation(files=[{"path": "config.json", "size": 3}])
+    r = ensure_hf_native_snapshot(
+        obs,
+        snapshot_download_fn=download,
+        cache_miss_exceptions=(FakeCacheMiss,),
+    )
+    assert r["verification"]["files_checked"] == 1
+    assert calls[0]["allow_patterns"] == ["config.json"]
+    assert calls[0]["revision"] == REVISION
