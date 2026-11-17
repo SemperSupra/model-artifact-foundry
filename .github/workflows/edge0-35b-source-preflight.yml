@@ -1,0 +1,58 @@
+name: Public Edge0 35B Source Metadata Preflight (No Weights)
+on:
+  push:
+    branches: ["research/edge0-35b-metadata-preflight-*"]
+permissions:
+  contents: read
+concurrency:
+  group: maf-edge0-source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline-negatives:
+    name: Source admission negative controls ARM64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Execute stdlib negative policy and metadata tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s experiments/edge0-35b-preflight -p 'test_*.py' -v
+          echo "MAF_EDGE0_METADATA_NEGATIVE_TESTS_PASS=true" >> "$GITHUB_STEP_SUMMARY"
+  exact-provider-metadata:
+    name: Exact read-only HF LFS metadata x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      EDGE0_SHA: f6bfa5546bcf89919f86946ec669bcc7f4cd526d
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Fetch source lock from exact Apache-2.0 Edge0 source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/edge0-source"
+          cd "$RUNNER_TEMP/edge0-source"
+          git init -q
+          git remote add origin https://github.com/Edge0-AI/Edge0.git
+          git sparse-checkout init --cone
+          git sparse-checkout set edge0-infer/tools/assets/edge0_35b
+          git fetch -q --depth=1 --filter=blob:none origin "$EDGE0_SHA"
+          git checkout -q --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$EDGE0_SHA"
+          test -s edge0-infer/tools/assets/edge0_35b/source.lock.json
+      - name: Read only exact HF revision metadata, compare six LFS SHA-256 digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 experiments/edge0-35b-preflight/source_metadata.py \
+            --lock "$RUNNER_TEMP/edge0-source/edge0-infer/tools/assets/edge0_35b/source.lock.json" \
+            --live
+      - name: Evidence ceiling
+        if: always()
+        shell: bash
+        run: echo "Only bounded public JSON and pinned Git source metadata; no weight downloads, GHCR writes, or approval." >> "$GITHUB_STEP_SUMMARY"
