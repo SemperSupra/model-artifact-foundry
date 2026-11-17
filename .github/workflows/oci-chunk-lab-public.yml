@@ -1,0 +1,67 @@
+name: Public Synthetic OCI Chunk Integrity Qualification
+on:
+  push:
+    branches: ["research/oci-chunk-lab-public-*"]
+permissions:
+  contents: read
+concurrency:
+  group: maf-oci-chunk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline-oci:
+    name: ORAS local OCI ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 9
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+      - name: Go source and adversarial file inventory tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          go version
+          cd experiments/oci-chunk-lab
+          go test -count=1 -v ./...
+          go build -o "$RUNNER_TEMP/oci-chunk" .
+      - name: Synthesise bytes, package actual OCI layers, restore and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,random,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"synthetic.model"
+          p.write_bytes(random.Random(41217).randbytes(1050437))
+          print("SYNTHETIC_INPUT_BYTES="+str(p.stat().st_size))
+          PY
+          "$RUNNER_TEMP/oci-chunk" split --input "$RUNNER_TEMP/synthetic.model" --out "$RUNNER_TEMP/shards" --logical synthetic-model --part-bytes 131072
+          cd "$RUNNER_TEMP/shards"
+          parts=()
+          for part in part-*.bin; do parts+=("$part:application/vnd.sempersupra.maf.raw-chunk-lab.v1"); done
+          test "$(find . -maxdepth 1 -name 'part-*.bin' | wc -l)" -ge 2
+          oras push --oci-layout "$RUNNER_TEMP/local-layout:synthetic" \
+            --artifact-type application/vnd.sempersupra.maf.bundle-lab.v1 \
+            manifest.json:application/vnd.sempersupra.maf.chunk-manifest-lab.v1+json "${parts[@]}"
+          mkdir -p "$RUNNER_TEMP/pulled"
+          oras pull --oci-layout "$RUNNER_TEMP/local-layout:synthetic" --output "$RUNNER_TEMP/pulled"
+          "$RUNNER_TEMP/oci-chunk" restore --manifest "$RUNNER_TEMP/pulled/manifest.json" --parts "$RUNNER_TEMP/pulled" --out "$RUNNER_TEMP/verified.model"
+          cmp "$RUNNER_TEMP/synthetic.model" "$RUNNER_TEMP/verified.model"
+          python3 - <<'PY'
+          import json,os,pathlib,platform
+          m=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"pulled"/"manifest.json").read_text())
+          receipt={"schema":"maf-oci-chunk-lab/v1","gha_sha":os.environ["GITHUB_SHA"],"arch":platform.machine(),"bytes":m["total_bytes"],"parts":len(m["parts"]),"max_blob_bytes":max(x["bytes"] for x in m["parts"]),"file_sha256":m["total_sha256"],"oci_layout_push_pull":True,"full_byte_roundtrip":True,"adversarial_tests":True,"ghcr_pushed":False,"real_model_downloaded":False,"approved_for_adoption":False}
+          line="MAF_OCI_CHUNK_RECEIPT="+json.dumps(receipt,sort_keys=True,separators=(",",":"))
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:f.write(line+"\n")
+          PY
+      - name: Boundary
+        if: always()
+        run: echo "Source-only local OCI. No GHCR push, no private data, no real model, no catalog promotion." >> "$GITHUB_STEP_SUMMARY"
