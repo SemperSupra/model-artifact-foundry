@@ -18,7 +18,7 @@ def fixture():
     siblings=[]
     for name in names:
         row={"rfilename":name,"size":2048}
-        if name in WEIGHTS:
+        if name in WEIGHTS or name=="tokenizer.json":
             row["lfs"]={"size":2048,"sha256":lock["files"][name]}
         siblings.append(row)
     meta={"id":subject.EXPECTED_REPO,"sha":subject.EXPECTED_REV,
@@ -32,7 +32,7 @@ class Validate(unittest.TestCase):
         result=subject.validate(a,b)
         self.assertEqual(result["source_locked_files"],11)
         self.assertEqual(result["weight_safetensors_lfs_verified"],6)
-        self.assertEqual(len(result["metadata_only_files"]),5)
+        self.assertEqual(len(result["metadata_only_files"]),4)
         self.assertFalse(result["redistribution_approved"])
         self.assertFalse(result["oci_published"])
     def reject(self,mutate):
@@ -64,7 +64,7 @@ class Validate(unittest.TestCase):
         with self.assertRaises(ValueError):
             subject.parse_json(b'{"a":1,"a":2}')
     def test_proposed_layer_requires_size(self):
-        a,b=fixture();b["siblings"][-1].pop("size")
+        a,b=fixture();next(x for x in b["siblings"] if x["rfilename"]=="chat_template.jinja").pop("size")
         result=subject.validate(a,b)
         self.assertFalse(result["all_locked_files_under_9gb"])
     def test_manifest_size_bound(self):
