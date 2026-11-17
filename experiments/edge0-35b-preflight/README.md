@@ -9,3 +9,7 @@ Perform one bounded, public, unauthenticated JSON API call to Hugging Face (max 
 **MAF boundary:** current approved Foundry `tools/hydrate.py` expects one `model.tar.gz`, whose ~20 GB-sized full-model payload would exceed typical OCI per-layer bounds. Upstream safetensors already have four 4.4–5.37 GB shards and might fit if packaged as individual OCI layers, but that requires a new reviewed bundle schema and hydration adapter, not pretending the old manifest accepts it. Existing synthetic OCI-layer prototype PR #88 qualifies a primitive only.
 
 **Authority:** MAF-private issue #6 rights/acquisition/mirror and #7 selection; public Foundry AGENTS.md retains publication authorization. BrowserParity-private #25 retains runtime use decisions. Workload is standard public free hosted GitHub Actions. Strictly non-promoting: no GHCR push, new approval, full model inference, or production effects.
+
+## Bounded small-byte verification (follow-up)
+
+With `--live --fetch-small`, independently fetch exactly the four non-LFS metadata files by locked revision (each <=300 KB; combined ~212 KB), verify their SHA-256 against the upstream lock, and retain the earlier seven provider-LFS matches. No weights or tokenizer bytes are downloaded. This completes cross-checks for all eleven source SHA declarations, but does not yet independently hash the large checkpoint bytes locally. Independent tests use memory streams to exercise good and malicious responses.

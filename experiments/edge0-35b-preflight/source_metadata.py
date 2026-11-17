@@ -129,9 +129,46 @@ def validate(lock, meta):
         "consumer_qualified": False,
     }
 
+
+SMALL_BYTE_ALLOWLIST = frozenset({
+    "chat_template.jinja", "config.json", "generation_config.json",
+    "model.safetensors.index.json",
+})
+MAX_SMALL_FILE_BYTES = 300_000
+
+def verify_small_bytes(lock, receipt, opener=urllib.request.urlopen):
+    # Fetch *only* four tiny public metadata files. The ~19.7GB weights and
+    # 20MB tokenizer are never downloaded; tokenizer has independently matched LFS metadata.
+    missing = set(receipt["metadata_only_files"])
+    if missing != SMALL_BYTE_ALLOWLIST:
+        raise ValueError("unexpected files in small-byte allowlist: "+repr(sorted(missing)))
+    rows = {row["name"]:row for row in receipt["files"]}
+    checked=[]
+    total=0
+    for name in sorted(missing):
+        size=rows[name]["bytes"]
+        if not isinstance(size,int) or not (0 < size <= MAX_SMALL_FILE_BYTES):
+            raise ValueError("unbounded or unknown small-file size for "+name)
+        url=("https://huggingface.co/" + EXPECTED_REPO + "/resolve/" +
+             EXPECTED_REV + "/" + name + "?download=true")
+        request=urllib.request.Request(url,headers={
+            "User-Agent":"SemperSupra-MAF-read-only-small-file-hash/1"})
+        with opener(request,timeout=20) as stream:
+            payload=stream.read(MAX_SMALL_FILE_BYTES+1)
+        if len(payload)!=size or hashlib.sha256(payload).hexdigest()!=lock["files"][name]:
+            raise ValueError("exact small-file SHA256/size mismatch for "+name)
+        checked.append(name)
+        total+=len(payload)
+    receipt["small_file_byte_sha256_verified"]=checked
+    receipt["small_file_verified_bytes"]=total
+    receipt["eleven_locked_hashes_cross_verified"]=(receipt["provider_lfs_sha_match"]==7 and
+                                                      len(checked)==4)
+    return receipt
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--lock",required=True)
+    p.add_argument("--fetch-small",action="store_true")
     group=p.add_mutually_exclusive_group(required=True)
     group.add_argument("--metadata")
     group.add_argument("--live",action="store_true")
@@ -139,6 +176,9 @@ def main():
     lock=load_json(args.lock)
     meta=get_hf_meta() if args.live else load_json(args.metadata)
     receipt=validate(lock,meta)
+    if args.fetch_small:
+        if not args.live:raise ValueError("--fetch-small requires exact live metadata")
+        receipt=verify_small_bytes(lock,receipt)
     receipt["gha_sha"]=os.getenv("GITHUB_SHA")
     receipt["model_source_lock_sha256"]=hashlib.sha256(pathlib.Path(args.lock).read_bytes()).hexdigest()
     line="MAF_EDGE0_READONLY_PREFLIGHT="+json.dumps(receipt,sort_keys=True,separators=(",",":"))

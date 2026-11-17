@@ -71,4 +71,46 @@ class Validate(unittest.TestCase):
         a,b=fixture();b["siblings"][0]["lfs"]["size"]=9_000_000_001
         result=subject.validate(a,b)
         self.assertFalse(result["all_locked_files_under_9gb"])
+
+    def test_small_verified_payloads(self):
+        import hashlib
+        import io
+        import urllib.parse
+        a,b=fixture()
+        payloads={}
+        for row in b["siblings"]:
+            if row["rfilename"] in subject.SMALL_BYTE_ALLOWLIST:
+                name=row["rfilename"]
+                data=("exact-public-"+name).encode()
+                payloads[name]=data
+                row["size"]=len(data)
+                a["files"][name]=hashlib.sha256(data).hexdigest()
+        def read(req,timeout):
+            name=urllib.parse.unquote(urllib.parse.urlsplit(req.full_url).path.rsplit("/",1)[-1])
+            return io.BytesIO(payloads[name])
+        r=subject.validate(a,b)
+        r=subject.verify_small_bytes(a,r,opener=read)
+        self.assertTrue(r["eleven_locked_hashes_cross_verified"])
+        self.assertEqual(r["small_file_verified_bytes"],sum(len(x) for x in payloads.values()))
+    def test_small_file_byte_tampering_rejected(self):
+        import hashlib
+        import io
+        a,b=fixture()
+        for row in b["siblings"]:
+            if row["rfilename"] in subject.SMALL_BYTE_ALLOWLIST:
+                payload=row["rfilename"].encode()
+                row["size"]=len(payload)
+                a["files"][row["rfilename"]]=hashlib.sha256(payload).hexdigest()
+        r=subject.validate(a,b)
+        with self.assertRaises(ValueError):
+            subject.verify_small_bytes(a,r,opener=lambda request,timeout:io.BytesIO(b"wrong"))
+    def test_small_file_unknown_size_rejected(self):
+        import io
+        a,b=fixture()
+        for row in b["siblings"]:
+            if row["rfilename"]=="chat_template.jinja":
+                row.pop("size")
+        r=subject.validate(a,b)
+        with self.assertRaises(ValueError):
+            subject.verify_small_bytes(a,r,opener=lambda request,timeout:io.BytesIO(b"anything"))
 if __name__=="__main__":unittest.main()

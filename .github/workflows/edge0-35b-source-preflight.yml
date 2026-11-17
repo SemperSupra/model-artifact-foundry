@@ -45,13 +45,13 @@ jobs:
           git checkout -q --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = "$EDGE0_SHA"
           test -s edge0-infer/tools/assets/edge0_35b/source.lock.json
-      - name: Read only exact HF revision metadata, compare six LFS SHA-256 digests
+      - name: Read exact HF revision LFS metadata and hash four small source files
         shell: bash
         run: |
           set -euo pipefail
           python3 experiments/edge0-35b-preflight/source_metadata.py \
             --lock "$RUNNER_TEMP/edge0-source/edge0-infer/tools/assets/edge0_35b/source.lock.json" \
-            --live
+            --live --fetch-small
       - name: Evidence ceiling
         if: always()
         shell: bash
