@@ -43,8 +43,9 @@ func validate(m Bundle)error{
 func restore(mpath,dir,dest string)error{
  if filepath.Base(mpath)!="manifest.json"{return errors.New("manifest name invalid")}
  if _,e:=regular(mpath);e!=nil{return e}
+ info,e:=regular(mpath);if e!=nil{return e};if info.Size()>maxManifestBytes{return errors.New("manifest exceeds bounded size")}
  b,e:=os.ReadFile(mpath);if e!=nil{return e}
- var m Bundle;if e:=json.Unmarshal(b,&m);e!=nil{return e};if e:=validate(m);e!=nil{return e}
+ m,e:=decodeStrictManifest(b);if e!=nil{return e};if e:=validate(m);e!=nil{return e}
  if _,e:=os.Lstat(dest);e==nil{return errors.New("refuse overwrite")}else if !os.IsNotExist(e){return e}
  allowed:=map[string]bool{"manifest.json":true};for _,p:=range m.Parts{allowed[p.Name]=true}
  entries,e:=os.ReadDir(dir);if e!=nil{return e}
