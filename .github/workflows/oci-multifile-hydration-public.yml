@@ -1,0 +1,116 @@
+name: Public OCI Multi-file Synthetic Hydration and Offline Reuse
+on:
+  push:
+    branches: ["research/oci-multifile-hydration-*"]
+permissions:
+  contents: read
+concurrency:
+  group: maf-oci-multifile-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-multifile:
+    name: Native 11-file OCI layout and cache ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 9
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+        with:
+          version: 1.3.3
+      - name: Source-only Go adversarial and R4 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd experiments/oci-multifile-lab
+          go test -count=1 -v -race ./...
+          go vet ./...
+          go build -o "$RUNNER_TEMP/maf-multifile" .
+      - name: Independently serialize all eleven synthetic model-named files as OCI layers
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SYNTHETIC="$RUNNER_TEMP/model-synthetic"
+          mkdir -p "$SYNTHETIC"
+          python3 - <<'PY'
+          import os,pathlib,random
+          root=pathlib.Path(os.environ["SYNTHETIC"])
+          names=["chat_template.jinja","config.json","generation_config.json","lora_edge0_35b.safetensors",
+            "model-00001-of-00004.safetensors","model-00002-of-00004.safetensors",
+            "model-00003-of-00004.safetensors","model-00004-of-00004.safetensors",
+            "model.safetensors.index.json","prerouter_edge0_35b.safetensors","tokenizer.json"]
+          for i,name in enumerate(names):
+            n=7777+(i+1)*20483
+            (root/name).write_bytes(random.Random(88000+i).randbytes(n))
+          print("SYNTHETIC_FILE_COUNT="+str(len(names)))
+          PY
+          "$RUNNER_TEMP/maf-multifile" pack --src "$SYNTHETIC" \
+            --out "$RUNNER_TEMP/packed" --id synthetic/edge0-shape \
+            --revision cccccccccccccccccccccccccccccccccccccccc
+          cd "$RUNNER_TEMP/packed"
+          layers=("manifest.json:application/vnd.sempersupra.maf.multifile-manifest-lab.v1+json")
+          for file in *; do
+            if [[ "$file" != manifest.json ]]; then layers+=("$file:application/vnd.sempersupra.maf.model-file-lab.v1"); fi
+          done
+          test "${#layers[@]}" -eq 12
+          oras push --oci-layout "$RUNNER_TEMP/oci-layout:synthetic" \
+            --artifact-type application/vnd.sempersupra.maf.multifile-bundle-lab.v1 \
+            "${layers[@]}"
+          oras manifest fetch --oci-layout "$RUNNER_TEMP/oci-layout:synthetic" --descriptor \
+            > "$RUNNER_TEMP/manifest-descriptor.json"
+          export OCI_DIGEST
+          OCI_DIGEST="$(python3 - <<'PY'
+          import json,os,pathlib,re
+          desc=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"manifest-descriptor.json").read_text())
+          digest=desc["digest"]
+          assert re.fullmatch(r"sha256:[a-f0-9]{64}",digest)
+          print(digest)
+          PY
+          )"
+          mkdir -p "$RUNNER_TEMP/received"
+          oras pull --oci-layout "$RUNNER_TEMP/oci-layout@$OCI_DIGEST" \
+            --output "$RUNNER_TEMP/received"
+          "$RUNNER_TEMP/maf-multifile" hydrate --src "$RUNNER_TEMP/received" --cache "$RUNNER_TEMP/verified-cache" \
+            | tee "$RUNNER_TEMP/first-hydration.log"
+          "$RUNNER_TEMP/maf-multifile" hydrate --src "$RUNNER_TEMP/received" --cache "$RUNNER_TEMP/verified-cache" \
+            | tee "$RUNNER_TEMP/second-hydration.log"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,platform,re
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])
+          first=json.loads((root/"first-hydration.log").read_text().split("=",1)[1])
+          second=json.loads((root/"second-hydration.log").read_text().split("=",1)[1])
+          m=json.loads((root/"received"/"manifest.json").read_text())
+          sel=json.loads((root/"verified-cache"/"selected"/"synthetic__edge0-shape.json").read_text())
+          assert first["cached"] is False and second["cached"] is True
+          assert first["path"]==second["path"]
+          assert len(m["files"])==11
+          assert sel["state"]=="RESEARCH_UNAPPROVED"
+          assert sel["upstream_revision"]=="c"*40
+          assert sel["manifest_sha256"]==hashlib.sha256((root/"received"/"manifest.json").read_bytes()).hexdigest()
+          restored=pathlib.Path(first["path"])
+          assert len([p for p in restored.iterdir() if p.is_file()])==12
+          total=0
+          for f in m["files"]:
+            original=(root/"model-synthetic"/f["name"]).read_bytes()
+            out=(restored/f["name"]).read_bytes()
+            assert original==out and len(original)==f["bytes"]
+            assert hashlib.sha256(out).hexdigest()==f["sha256"]
+            total+=len(out)
+          receipt={"schema":"maf-multifile-lab-gha/v1","head":os.environ["GITHUB_SHA"],"architecture":platform.machine(),
+            "oci_layout_digest":os.environ["OCI_DIGEST"],"files_verified":len(m["files"]),
+            "bytes_verified":total,"verified_cache_hit_on_repeat":True,
+            "full_byte_roundtrip":True,"go_adversarial_tests":True,"oci_remote_registry":False,
+            "real_model_weights":False,"model_approved":False}
+          line="MAF_MULTIFILE_GHA_RECEIPT="+json.dumps(receipt,sort_keys=True,separators=(",",":"))
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:f.write(line+"\n")
+          PY
+      - name: Research-only boundary
+        if: always()
+        run: echo "ONLY synthetic raw OCI layers in local layout; no GHCR publication, model rights, secrets, private code or HIL." >> "$GITHUB_STEP_SUMMARY"
